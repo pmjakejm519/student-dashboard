@@ -1,0 +1,41 @@
+rules_version = '2';
+// Same lock-down as the Claude version:
+// - students read and write only their own tickets/{uid} document
+// - only IT (anyone listed in /admins) writes statuses and replies, school info and the block list
+// - everything else is closed
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // To allow only your school's accounts, replace the body with e.g.:
+    //   return request.auth != null && request.auth.token.email.matches('.*@hunterbusinessschool[.]edu$');
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    function isBlocked() {
+      let p = /databases/$(database)/documents/config/blocked;
+      return exists(p) && get(p).data.get('uids', {}).keys().hasAny([request.auth.uid]);
+    }
+
+    match /admins/{uid} {
+      allow read: if isSelf(uid);
+      allow write: if false; // add IT staff in the Firebase console
+    }
+    match /tickets/{uid} {
+      allow read: if isAdmin() || isSelf(uid);
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || (
+        isSelf(uid) && !isBlocked()
+        && request.resource.data.keys().hasOnly(['tickets'])
+        && request.resource.data.tickets is map
+        && request.resource.data.tickets.size() <= 300
+      );
+    }
+    match /replies/{uid} {
+      allow read: if isAdmin() || isSelf(uid);
+      allow write: if isAdmin();
+    }
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
