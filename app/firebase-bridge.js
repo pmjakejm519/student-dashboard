@@ -3,7 +3,7 @@
 // interface on top of Firebase Auth, Firestore and Storage.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut,
+  getAuth, onAuthStateChanged, signInWithPopup, signOut,
   GoogleAuthProvider, OAuthProvider, browserLocalPersistence, setPersistence, connectAuthEmulator, signInWithCredential,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
@@ -67,11 +67,21 @@ for (const key of opts.providers) {
   b.className = "btn primary"; b.type = "button"; b.textContent = def.label;
   b.addEventListener("click", async () => {
     gateErr("");
+    b.disabled = true; b.textContent = "Opening Google sign-in…";
     try { await signInWithPopup(auth, def.make()); }
     catch (e) {
-      if (e?.code === "auth/popup-blocked" || e?.code === "auth/operation-not-supported-in-this-environment") return signInWithRedirect(auth, def.make());
-      if (e?.code !== "auth/popup-closed-by-user" && e?.code !== "auth/cancelled-popup-request") gateErr("Sign-in didn't work. Try again, or ask IT for help.");
-    }
+      const code = e?.code || "unknown";
+      const msg = {
+        "auth/popup-blocked": "Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.",
+        "auth/popup-closed-by-user": "The sign-in window was closed before you finished. Try again.",
+        "auth/cancelled-popup-request": "",
+        "auth/unauthorized-domain": "This web address isn't approved for sign-in yet. IT needs to add it under Firebase → Authentication → Settings → Authorized domains.",
+        "auth/operation-not-allowed": "Google sign-in isn't turned on yet. IT needs to enable it under Firebase → Authentication → Sign-in method.",
+        "auth/configuration-not-found": "Sign-in isn't set up yet. IT needs to click Get started under Firebase → Authentication.",
+        "auth/network-request-failed": "Couldn't reach Google. Check your internet connection and try again.",
+      }[code];
+      gateErr(msg === "" ? "" : (msg || "Sign-in didn't work. Try again, or ask IT for help.") + ` (${code})`);
+    } finally { b.disabled = false; b.textContent = def.label; }
   });
   gate.querySelector("#hd-gate-btns").append(b);
 }
