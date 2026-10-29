@@ -12,6 +12,9 @@ export const firebaseConfig = {
 export const appOptions = {
   // Sign-in buttons to show: "google", "microsoft" (Microsoft needs extra setup, see README).
   providers: ["google"],
+  // Google "Web client ID" (Firebase → Authentication → Sign-in method → Google → Web SDK configuration).
+  // When set, students sign in with Google's own button, which works even where pop-ups or third-party cookies are blocked.
+  googleClientId: "",
   // Only let these school email domains in, e.g. ["hunterbusinessschool.edu"]. Empty = any account.
   // Also set the same domain in firestore.rules so the server enforces it.
   allowedDomains: [],

@@ -66,8 +66,47 @@ const PROVIDERS = {
   google: { label: "Sign in with Google", make: () => { const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" }); return p; } },
   microsoft: { label: "Sign in with Microsoft", make: () => { const p = new OAuthProvider("microsoft.com"); p.setCustomParameters({ prompt: "select_account" }); return p; } },
 };
+// Google's own sign-in button (Google Identity Services) signs in on this page: no pop-up to block and
+// no cross-site redirect, which school browsers and strict privacy settings break.
+const useGis = !!opts.googleClientId && opts.providers.includes("google");
+function authMessage(code) {
+  return {
+    "auth/popup-blocked": "Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.",
+    "auth/popup-closed-by-user": "The sign-in window was closed before you finished. Try again.",
+    "auth/cancelled-popup-request": "",
+    "auth/unauthorized-domain": "This web address isn't approved for sign-in yet. IT needs to add it under Firebase → Authentication → Settings → Authorized domains.",
+    "auth/operation-not-allowed": "Google sign-in isn't turned on yet. IT needs to enable it under Firebase → Authentication → Sign-in method.",
+    "auth/configuration-not-found": "Sign-in isn't set up yet. IT needs to click Get started under Firebase → Authentication.",
+    "auth/network-request-failed": "Couldn't reach Google. Check your internet connection and try again.",
+    "auth/invalid-credential": "Google sign-in was refused. IT should check that the Web client ID in firebase-config.js matches Firebase → Authentication → Google.",
+  }[code];
+}
+if (useGis) {
+  const holder = document.createElement("div");
+  holder.id = "hd-gis"; holder.style.cssText = "display:flex;justify-content:center;min-height:44px";
+  gate.querySelector("#hd-gate-btns").append(holder);
+  const s = document.createElement("script");
+  s.src = "https://accounts.google.com/gsi/client"; s.async = true;
+  s.onload = () => {
+    google.accounts.id.initialize({
+      client_id: opts.googleClientId,
+      use_fedcm_for_button: true,
+      use_fedcm_for_prompt: true,
+      callback: async resp => {
+        gateErr("");
+        try { await signInWithCredential(auth, GoogleAuthProvider.credential(resp.credential)); }
+        catch (e) { const code = e?.code || "unknown"; gateErr((authMessage(code) || "Sign-in didn't work. Try again, or ask IT for help.") + ` (${code})`); }
+      },
+    });
+    google.accounts.id.renderButton(holder, { theme: "filled_blue", size: "large", text: "signin_with", shape: "rectangular", width: Math.min(320, holder.clientWidth || 320) });
+  };
+  s.onerror = () => gateErr("Couldn't load Google sign-in. Check your internet connection, or turn off ad or tracker blocking for this site.");
+  document.head.append(s);
+}
+
 for (const key of opts.providers) {
   const def = PROVIDERS[key]; if (!def) continue;
+  if (key === "google" && useGis) continue;
   const b = document.createElement("button");
   b.className = "btn primary"; b.type = "button"; b.textContent = def.label;
   b.addEventListener("click", async () => {
@@ -82,15 +121,7 @@ for (const key of opts.providers) {
         try { sessionStorage.setItem("hd:redirect", "1"); } catch {}
         return signInWithRedirect(auth, def.make());
       }
-      const msg = {
-        "auth/popup-blocked": "Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.",
-        "auth/popup-closed-by-user": "The sign-in window was closed before you finished. Try again.",
-        "auth/cancelled-popup-request": "",
-        "auth/unauthorized-domain": "This web address isn't approved for sign-in yet. IT needs to add it under Firebase → Authentication → Settings → Authorized domains.",
-        "auth/operation-not-allowed": "Google sign-in isn't turned on yet. IT needs to enable it under Firebase → Authentication → Sign-in method.",
-        "auth/configuration-not-found": "Sign-in isn't set up yet. IT needs to click Get started under Firebase → Authentication.",
-        "auth/network-request-failed": "Couldn't reach Google. Check your internet connection and try again.",
-      }[code];
+      const msg = authMessage(code);
       gateErr(msg === "" ? "" : (msg || "Sign-in didn't work. Try again, or ask IT for help.") + ` (${code})`);
     } finally { b.disabled = false; b.textContent = def.label; }
   });
