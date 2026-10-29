@@ -1,0 +1,1188 @@
+<title>Student Tech Help Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a service-counter app. Sticky top bar with tabs, one centered working column for students, a two-pane queue for the IT desk. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --sunk: #e8ecf2;
+  --line: #d3d9e3;
+  --fg: #172033;
+  --muted: #5a6478;
+  --accent: #1f4fd1;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3eafc;
+  --ok: #17794a; --ok-soft: #dff3e8;
+  --warn: #9a5b00; --warn-soft: #fbedd5;
+  --bad: #b42335; --bad-soft: #fbe2e5;
+  --info: #5b3cc4; --info-soft: #ece6fb;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --surface: #171e2a; --sunk: #1f2837; --line: #2c3749;
+    --fg: #e6eaf2; --muted: #9aa5b8; --accent: #7c9cff; --accent-ink: #0b1020; --accent-soft: #1d2a4d;
+    --ok: #5fd39a; --ok-soft: #143426; --warn: #f0b45a; --warn-soft: #3a2c13;
+    --bad: #ff8a98; --bad-soft: #3d1820; --info: #b9a5ff; --info-soft: #2a2148;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --surface: #171e2a; --sunk: #1f2837; --line: #2c3749;
+  --fg: #e6eaf2; --muted: #9aa5b8; --accent: #7c9cff; --accent-ink: #0b1020; --accent-soft: #1d2a4d;
+  --ok: #5fd39a; --ok-soft: #143426; --warn: #f0b45a; --warn-soft: #3a2c13;
+  --bad: #ff8a98; --bad-soft: #3d1820; --info: #b9a5ff; --info-soft: #2a2148;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1180px; margin: 0 auto; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 18px; margin-right: auto; }
+.brand svg { flex: none; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tab { border: 0; background: transparent; padding: 7px 12px; border-radius: 8px; cursor: pointer; color: var(--muted); font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
+.tab:hover { background: var(--sunk); color: var(--fg); }
+.tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
+.count { font-family: var(--font-mono); font-size: 12px; background: var(--accent); color: var(--accent-ink); border-radius: 99px; padding: 0 7px; }
+
+main { max-width: 1180px; margin: 0 auto; padding-block: 28px 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.col { max-width: 680px; margin: 0 auto; display: grid; gap: 20px; }
+.lede h1 { font-size: clamp(26px, 4vw, 34px); }
+.lede p { color: var(--muted); margin: 6px 0 0; max-width: 60ch; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; display: grid; gap: 18px; }
+.stepper { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.stepper span { display: inline-flex; align-items: center; gap: 6px; }
+.stepper b { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--sunk); font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.stepper .on { color: var(--fg); font-weight: 600; }
+.stepper .on b { background: var(--accent); color: var(--accent-ink); }
+.stepper .done b { background: var(--ok-soft); color: var(--ok); }
+.stepper i { width: 18px; height: 1px; background: var(--line); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+label.f { display: grid; gap: 5px; font-weight: 500; font-size: 14px; }
+label.f small { color: var(--muted); font-weight: 400; }
+input[type=text], input[type=email], input[type=tel], select, textarea {
+  width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 9px 11px;
+}
+textarea { min-height: 96px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.err { color: var(--bad); font-size: 13px; }
+
+.choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.choice { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 10px 12px; text-align: left; cursor: pointer; display: grid; gap: 2px; }
+.choice:hover { border-color: var(--accent); }
+.choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.choice strong { font-weight: 600; font-size: 14px; }
+.choice span { color: var(--muted); font-size: 12.5px; }
+.issues { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.row.end { justify-content: flex-end; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--sunk); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.good { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+
+.guide-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.guide-head .of { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.progress { height: 6px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+.progress div { height: 100%; background: var(--accent); transition: width .25s; }
+.stepcard { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; display: grid; gap: 8px; }
+.stepcard h3 { font-size: 20px; }
+.stepcard p { margin: 0; max-width: 62ch; }
+.stepcard ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tip { background: var(--sunk); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--muted); }
+
+.notice { border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 6px; }
+.notice.ok { background: var(--ok-soft); color: var(--fg); }
+.notice.ok h3 { color: var(--ok); }
+.notice.warn { background: var(--warn-soft); }
+.tid { font-family: var(--font-mono); font-weight: 500; letter-spacing: .02em; }
+pre.summary { white-space: pre-wrap; background: var(--sunk); padding: 12px; border-radius: 8px; font-family: var(--font-mono); font-size: 12.5px; margin: 0; overflow-x: auto; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.s-new { background: var(--bad-soft); color: var(--bad); }
+.s-progress { background: var(--accent-soft); color: var(--accent); }
+.s-waiting { background: var(--warn-soft); color: var(--warn); }
+.s-resolved { background: var(--ok-soft); color: var(--ok); }
+.s-self { background: var(--info-soft); color: var(--info); }
+.urgent { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--bad); }
+
+.mylist { display: grid; gap: 12px; }
+.tcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 10px; }
+.tcard-h { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.tcard-h h3 { font-size: 17px; margin-right: auto; }
+.meta { color: var(--muted); font-size: 13px; }
+
+.thread { display: grid; gap: 8px; }
+.msg { padding: 9px 12px; border-radius: 10px; max-width: 85%; display: grid; gap: 2px; }
+.msg p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg small { color: var(--muted); font-size: 11.5px; }
+.msg.me { background: var(--accent-soft); justify-self: end; }
+.msg.them { background: var(--sunk); justify-self: start; }
+.reply { display: flex; gap: 8px; align-items: flex-end; }
+.reply textarea { min-height: 42px; height: 42px; }
+
+/* Desk */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; text-align: left; display: grid; gap: 2px; }
+.stat:hover { border-color: var(--accent); }
+.stat[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); border-color: var(--accent); }
+.stat b { font-family: var(--font-display); font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat span { font-size: 12.5px; color: var(--muted); letter-spacing: .03em; }
+.desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .desk { grid-template-columns: minmax(0, 1fr); } }
+.queue { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.qtools { padding: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; flex-wrap: wrap; }
+.qtools input { flex: 1 1 160px; }
+.qtools select { flex: 0 1 150px; width: auto; }
+.qrow { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; padding: 12px 14px; cursor: pointer; display: grid; gap: 4px; }
+.qrow:last-child { border-bottom: 0; }
+.qrow:hover { background: var(--sunk); }
+.qrow[aria-current="true"] { background: var(--accent-soft); }
+.qrow .l1 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.qrow .l1 strong { margin-right: auto; }
+.qrow .l2 { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bad); display: inline-block; }
+.detail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); }
+.kv { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tried { margin: 0; padding-left: 20px; font-size: 14px; display: grid; gap: 2px; }
+.sect { display: grid; gap: 8px; }
+.sect > h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.empty { padding: 28px 18px; text-align: center; color: var(--muted); display: grid; gap: 6px; }
+.empty strong { color: var(--fg); font-family: var(--font-display); font-size: 17px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 14px; z-index: 20; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<style>
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.lang button { border: 0; background: transparent; padding: 5px 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
+.lang button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.banner { background: var(--warn-soft); border-radius: var(--radius); padding: 12px 16px; display: flex; gap: 10px; align-items: flex-start; }
+.banner b { color: var(--warn); }
+.banner p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qf { display: grid; gap: 10px; }
+.qf-in { position: relative; }
+.qf-in input { padding-left: 36px; }
+.qf-in svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); }
+.qf-res { display: grid; gap: 6px; }
+.qf-res details { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+.qf-res summary { cursor: pointer; font-weight: 600; }
+.qf-res summary small { display: block; color: var(--muted); font-weight: 400; font-size: 12.5px; }
+.qf-res details p { margin: 8px 0 0; }
+.schoolbox { border: 1px dashed var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 10px 14px; display: grid; gap: 4px; font-size: 14px; }
+.schoolbox a { color: var(--accent); font-weight: 600; overflow-wrap: anywhere; }
+.schoolbox .tid { font-size: 15px; }
+.infocard { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; font-size: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; }
+.infocard div { display: grid; gap: 1px; min-width: 0; }
+.infocard span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.infocard b { font-weight: 500; overflow-wrap: anywhere; white-space: pre-wrap; }
+.photos { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.thumb { position: relative; width: 92px; height: 92px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--sunk); display: grid; place-items: center; font-size: 12px; color: var(--muted); text-align: center; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .x { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); cursor: pointer; font-size: 14px; line-height: 1; }
+a.thumb { text-decoration: none; }
+.addphoto { width: 92px; height: 92px; border: 1px dashed var(--line); border-radius: 8px; display: grid; place-items: center; cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13px; text-align: center; padding: 6px; }
+.addphoto:hover { border-color: var(--accent); background: var(--accent-soft); }
+.addphoto input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.rate { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rate button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.rated { font-size: 13px; font-weight: 600; }
+.rated.up { color: var(--ok); } .rated.down { color: var(--bad); }
+.deskhead { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }
+.settings { margin-bottom: 18px; }
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="4" width="22" height="14" rx="2.5" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M9 22h8M13 18v4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><path d="M9 11.5l2.5 2.5L17 8.5" stroke="var(--ok)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="brand-name">Student Tech Help Desk</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-help" data-view="help" aria-selected="true">Get help</button>
+      <button class="tab" role="tab" id="tab-mine" data-view="mine" aria-selected="false">Check a ticket</button>
+      <button class="tab" role="tab" id="tab-desk" data-view="desk" aria-selected="false" hidden>Ticket queue <span class="count" id="desk-count" hidden></span></button>
+    </nav>
+    <div class="lang" id="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="es" aria-pressed="false">Español</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="view-help" class="col"></section>
+  <section id="view-mine" class="col" hidden></section>
+  <section id="view-desk" hidden></section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+// ---------- Language ----------
+const STR = {
+  en: {
+    tabHelp: "Get help", tabMine: "Check a ticket",
+    h1: "What's going on with your device?",
+    lede: "Tell us who you are and what's wrong. We'll walk you through quick fixes first, and if those don't work your ticket goes straight to the IT desk.",
+    qfTitle: "Search quick fixes", qfPh: "Try “wifi”, “password”, “won't charge”…", qfNone: "No quick fixes match that. Start a ticket below and IT will help.",
+    sAbout: "About you", sProblem: "The problem", sGuide: "Try these fixes", sTicket: "Ticket",
+    contactH: "Your contact info", name: "Full name", namePh: "First and last name", email: "School email", phone: "Phone number", phoneHint: "so IT can call or text you",
+    deviceQ: "Which device needs help?", deviceOther: "What kind of device?", deviceOtherPh: "e.g. HP printer in Room 204",
+    eName: "Enter your name.", eEmail: "Enter a valid email address.", ePhone: "Enter a phone number with area code.", eDevice: "Pick the device that's having trouble.",
+    next: "Next", back: "Back",
+    problemH: "What's the problem?", describe: "Describe what's happening", describePh: "What were you trying to do? Any error message? When did it start?", req: "required", opt: "optional, but it helps",
+    where: "Where are you?", wherePh: "Room, building or “at home”", optional: "optional",
+    urgentQ: "Is this stopping you from doing classwork today?", urgentNo: "No, it can wait a bit", urgentYes: "Yes, I'm blocked right now",
+    eIssue: "Pick the closest match, or “Something else”.", eDetails: "Tell us a little about the problem.",
+    startTs: "Start troubleshooting", sendIT: "Send to IT",
+    photosH: "Add photos", photosHint: "A screenshot of the error or a photo of the damage helps IT a lot. Up to 3.", addPhoto: "+ Add photo", uploading: "Uploading…", remove: "Remove photo",
+    eNotImage: "That file isn't a photo or screenshot.", eTooBig: "That photo is too big. The limit is 10 MB.", eUpload: "The photo didn't upload. Try again.", waitUpload: "Wait for your photos to finish uploading.",
+    stepOf: (a, b) => `Step ${a} of ${b}`, tsTip: "Try this step, then tell us how it went. If anything looks risky or you're not sure, skip ahead and send it to IT.",
+    fixed: "That fixed it", nextStep: "Still not working, next step", lastStep: "Still not working, send to IT", skip: "Skip and send to IT now", backProblem: "Back to the problem",
+    sending: "Sending your ticket…",
+    gladH: "Glad that worked!", gladP: "We logged it as {id} so IT knows which fixes help.",
+    inH: "Your ticket is in", inP: "Ticket {id} went to the IT desk. IT may call or text you at {phone}.",
+    writeDown: "Write down your ticket number. You'll need it and your phone number to check on this ticket.",
+    failH: "We couldn't save this ticket here", failP: "Your account can't save tickets on this page (you may need to sign in, or ask IT for access). Copy the summary below and send it to the IT desk.",
+    copySum: "Copy summary", newTicket: "Start a new ticket", resetIn: s => `Starting a new ticket in ${s}s`,
+    lookH: "Check a ticket", lookP: "Enter your ticket number and the phone number you gave us to see its status and any replies from IT.",
+    tnum: "Ticket number", tnumPh: "HD-1028-AB12", last4: "Last 4 digits of your phone", find: "Find my ticket", notFound: "We couldn't find a ticket with that number and phone. Check both, and use the same device and account you sent it from.",
+    lookOff: "Ticket lookup isn't available here. Sign in to check on a ticket.", another: "Check another ticket",
+    opened: "opened", replyPh: "Add info or reply to IT…", reopenPh: "Problem back? Send a message to reopen…", send: "Send", sentIT: "Sent to IT", sendFail: "Message didn't send. Try again.",
+    rateQ: "IT marked this resolved. Did this help?", rateUp: "👍 Yes", rateDown: "👎 Not really", rateThanks: "Thanks for the feedback!",
+    itDesk: "IT desk", deskInfo: "IT help desk", hours: "Hours", location: "Where to find us", contact: "Contact",
+    resetBox: "Reset your password here:", wifiBox: "School Wi-Fi network:", notice: "Notice",
+    eLimit: "You've sent several tickets in the last few minutes. Wait a bit, or use Check a ticket to follow up on one you already sent.",
+    eOpenLimit: "You already have 10 open tickets. Use Check a ticket to follow up on those first.",
+    eBlocked: "This account can't send tickets right now. Please visit or call the IT desk.",
+    eSlow: "Wait a few seconds before sending another message.",
+    st: { new: "Open", progress: "In progress", waiting: "Waiting on you", resolved: "Resolved", self: "Fixed with guide" },
+  },
+  es: {
+    tabHelp: "Obtener ayuda", tabMine: "Revisar un ticket",
+    h1: "¿Qué le pasa a tu dispositivo?",
+    lede: "Dinos quién eres y qué está fallando. Primero te guiamos con soluciones rápidas, y si no funcionan, tu ticket va directo al equipo de IT.",
+    qfTitle: "Buscar soluciones rápidas", qfPh: "Prueba “wifi”, “contraseña”, “no carga”…", qfNone: "No hay soluciones que coincidan. Crea un ticket abajo y IT te ayudará.",
+    sAbout: "Tus datos", sProblem: "El problema", sGuide: "Prueba estas soluciones", sTicket: "Ticket",
+    contactH: "Tu información de contacto", name: "Nombre completo", namePh: "Nombre y apellido", email: "Correo escolar", phone: "Número de teléfono", phoneHint: "para que IT pueda llamarte o enviarte un mensaje",
+    deviceQ: "¿Qué dispositivo necesita ayuda?", deviceOther: "¿Qué tipo de dispositivo?", deviceOtherPh: "p. ej. impresora HP en el salón 204",
+    eName: "Escribe tu nombre.", eEmail: "Escribe un correo válido.", ePhone: "Escribe un número de teléfono con código de área.", eDevice: "Elige el dispositivo que tiene problemas.",
+    next: "Siguiente", back: "Atrás",
+    problemH: "¿Cuál es el problema?", describe: "Describe lo que pasa", describePh: "¿Qué intentabas hacer? ¿Algún mensaje de error? ¿Cuándo empezó?", req: "obligatorio", opt: "opcional, pero ayuda",
+    where: "¿Dónde estás?", wherePh: "Salón, edificio o “en casa”", optional: "opcional",
+    urgentQ: "¿Esto te impide hacer tus tareas de clase hoy?", urgentNo: "No, puede esperar un poco", urgentYes: "Sí, no puedo trabajar ahora",
+    eIssue: "Elige la opción más parecida, o “Otra cosa”.", eDetails: "Cuéntanos un poco sobre el problema.",
+    startTs: "Empezar a resolver", sendIT: "Enviar a IT",
+    photosH: "Agregar fotos", photosHint: "Una captura del error o una foto del daño ayuda mucho a IT. Hasta 3.", addPhoto: "+ Agregar foto", uploading: "Subiendo…", remove: "Quitar foto",
+    eNotImage: "Ese archivo no es una foto ni una captura.", eTooBig: "La foto es muy grande. El límite es 10 MB.", eUpload: "La foto no se subió. Inténtalo de nuevo.", waitUpload: "Espera a que terminen de subirse tus fotos.",
+    stepOf: (a, b) => `Paso ${a} de ${b}`, tsTip: "Prueba este paso y dinos cómo te fue. Si algo parece riesgoso o no estás seguro, salta y envíalo a IT.",
+    fixed: "Eso lo arregló", nextStep: "Sigue sin funcionar, siguiente paso", lastStep: "Sigue sin funcionar, enviar a IT", skip: "Saltar y enviar a IT ahora", backProblem: "Volver al problema",
+    sending: "Enviando tu ticket…",
+    gladH: "¡Qué bueno que funcionó!", gladP: "Lo registramos como {id} para que IT sepa qué soluciones ayudan.",
+    inH: "Tu ticket fue enviado", inP: "El ticket {id} llegó al equipo de IT. IT puede llamarte o escribirte al {phone}.",
+    writeDown: "Anota tu número de ticket. Lo necesitarás junto con tu teléfono para revisar este ticket.",
+    failH: "No pudimos guardar este ticket aquí", failP: "Tu cuenta no puede guardar tickets en esta página (quizás debas iniciar sesión o pedir acceso a IT). Copia el resumen y envíalo al equipo de IT.",
+    copySum: "Copiar resumen", newTicket: "Crear un ticket nuevo", resetIn: s => `Se abrirá un ticket nuevo en ${s} s`,
+    lookH: "Revisar un ticket", lookP: "Escribe tu número de ticket y el teléfono que nos diste para ver el estado y las respuestas de IT.",
+    tnum: "Número de ticket", tnumPh: "HD-1028-AB12", last4: "Últimos 4 dígitos de tu teléfono", find: "Buscar mi ticket", notFound: "No encontramos un ticket con ese número y teléfono. Revisa ambos y usa el mismo dispositivo y cuenta con los que lo enviaste.",
+    lookOff: "La búsqueda de tickets no está disponible aquí. Inicia sesión para revisar un ticket.", another: "Revisar otro ticket",
+    opened: "abierto", replyPh: "Agrega información o responde a IT…", reopenPh: "¿Volvió el problema? Escribe para reabrirlo…", send: "Enviar", sentIT: "Enviado a IT", sendFail: "El mensaje no se envió. Inténtalo de nuevo.",
+    rateQ: "IT marcó esto como resuelto. ¿Te ayudó?", rateUp: "👍 Sí", rateDown: "👎 No mucho", rateThanks: "¡Gracias por tu opinión!",
+    itDesk: "IT", deskInfo: "Mesa de ayuda de IT", hours: "Horario", location: "Dónde estamos", contact: "Contacto",
+    resetBox: "Restablece tu contraseña aquí:", wifiBox: "Red Wi-Fi de la escuela:", notice: "Aviso",
+    eLimit: "Enviaste varios tickets en los últimos minutos. Espera un poco o usa Revisar un ticket para dar seguimiento a uno que ya enviaste.",
+    eOpenLimit: "Ya tienes 10 tickets abiertos. Usa Revisar un ticket para dar seguimiento a esos primero.",
+    eBlocked: "Esta cuenta no puede enviar tickets por ahora. Visita o llama al equipo de IT.",
+    eSlow: "Espera unos segundos antes de enviar otro mensaje.",
+    st: { new: "Abierto", progress: "En proceso", waiting: "Esperando tu respuesta", resolved: "Resuelto", self: "Resuelto con la guía" },
+  },
+};
+let lang = "en";
+try { if (localStorage.getItem("hd:lang") === "es") lang = "es"; } catch {}
+const T = k => STR[lang][k] ?? STR.en[k];
+const fill = (s, vals) => s.split(/(\{\w+\})/).map(part => { const m = part.match(/^\{(\w+)\}$/); return m ? vals[m[1]] : part; });
+
+// ---------- Reference data ----------
+const DEVICES = [
+  { id: "win", g: "win", en: ["Windows laptop", "Dell, HP, Lenovo…"], es: ["Laptop Windows", "Dell, HP, Lenovo…"] },
+  { id: "mac", g: "mac", en: ["MacBook / Mac", "macOS"], es: ["MacBook / Mac", "macOS"] },
+  { id: "chromebook", g: "cros", en: ["Chromebook", "ChromeOS"], es: ["Chromebook", "ChromeOS"] },
+  { id: "desktop", g: "win", en: ["School desktop", "Lab or classroom PC"], es: ["Computadora escolar", "PC del laboratorio o salón"] },
+  { id: "iphone", g: "ios", en: ["iPhone", "iOS"], es: ["iPhone", "iOS"] },
+  { id: "ipad", g: "ios", en: ["iPad", "iPadOS"], es: ["iPad", "iPadOS"] },
+  { id: "android", g: "android", en: ["Android phone", "Samsung, Pixel…"], es: ["Teléfono Android", "Samsung, Pixel…"] },
+  { id: "atablet", g: "android", en: ["Android tablet", "Galaxy Tab, Fire…"], es: ["Tableta Android", "Galaxy Tab, Fire…"] },
+  { id: "other", g: "other", en: ["Something else", "Printer, hotspot…"], es: ["Otra cosa", "Impresora, hotspot…"] },
+];
+const devOf = id => DEVICES.find(d => d.id === id) || DEVICES[DEVICES.length - 1];
+
+// Each step body is a string, or an object keyed by device group with "_" as the default.
+// Spanish steps line up one-to-one with English, so tickets always record the English step titles for IT.
+const ISSUES = [
+  { id: "signin", school: "reset",
+    en: { label: "Can't sign in to my computer", sub: "Password rejected, stuck at login", steps: [
+      { t: "Check the basics on the login screen", b: "Make sure Caps Lock is off and the keyboard language is right. Click the eye icon (if there is one) to see what you are typing." },
+      { t: "Use your full school username", b: { _: "Try your full school email address as the username instead of only your name. On shared school computers, choose “Other user” first.", mac: "If your Mac shows a list of users, pick yours. If it is a school-managed Mac, try “Other…” and type your full school email.", cros: "Chromebooks sign in with your full school email address. Make sure you are adding a school account, not a personal Gmail." } },
+      { t: "Connect to the internet first", b: { _: "If you changed your password recently, the computer may need internet to accept the new one. Click the Wi-Fi icon in the corner of the login screen and connect to the school network, then try again.", cros: "Click the clock area at the bottom right, connect to Wi-Fi, then sign in again." } },
+      { t: "Try your previous password", b: "If you changed your password on another device, this computer may still remember the old one until it reconnects. Try the old password once." },
+      { t: "Restart the computer", b: { _: "Hold the power button until it turns off, wait 10 seconds, then turn it back on and try one more time.", cros: "Hold the power button, choose Power off, wait 10 seconds and turn it back on." } },
+      { t: "Watch for a lockout", b: "After several wrong tries your account can lock for a while. Stop trying for 15 minutes so you don't extend the lock. If you still can't get in, IT can unlock it." },
+    ]},
+    es: { label: "No puedo iniciar sesión en mi computadora", sub: "Contraseña rechazada, atascado en el inicio", steps: [
+      { t: "Revisa lo básico en la pantalla de inicio", b: "Asegúrate de que Bloq Mayús esté apagado y que el idioma del teclado sea el correcto. Haz clic en el ícono del ojo (si hay uno) para ver lo que escribes." },
+      { t: "Usa tu usuario escolar completo", b: { _: "Prueba tu correo escolar completo como usuario en lugar de solo tu nombre. En computadoras compartidas, elige primero “Otro usuario”.", mac: "Si tu Mac muestra una lista de usuarios, elige el tuyo. Si es una Mac de la escuela, prueba “Otro…” y escribe tu correo escolar completo.", cros: "Las Chromebooks inician sesión con tu correo escolar completo. Asegúrate de agregar una cuenta escolar, no un Gmail personal." } },
+      { t: "Conéctate a internet primero", b: { _: "Si cambiaste tu contraseña hace poco, la computadora puede necesitar internet para aceptar la nueva. Haz clic en el ícono de Wi-Fi en la esquina de la pantalla de inicio, conéctate a la red escolar y vuelve a intentarlo.", cros: "Haz clic en el reloj abajo a la derecha, conéctate al Wi-Fi y vuelve a iniciar sesión." } },
+      { t: "Prueba tu contraseña anterior", b: "Si cambiaste tu contraseña en otro dispositivo, esta computadora puede recordar la anterior hasta que se reconecte. Prueba la contraseña anterior una vez." },
+      { t: "Reinicia la computadora", b: { _: "Mantén presionado el botón de encendido hasta que se apague, espera 10 segundos, enciéndela e inténtalo una vez más.", cros: "Mantén presionado el botón de encendido, elige Apagar, espera 10 segundos y vuelve a encenderla." } },
+      { t: "Cuidado con el bloqueo", b: "Después de varios intentos fallidos tu cuenta puede bloquearse por un tiempo. Deja de intentar por 15 minutos para no alargar el bloqueo. Si aún no puedes entrar, IT puede desbloquearla." },
+    ]}},
+  { id: "password", school: "reset",
+    en: { label: "Forgot password or locked out", sub: "School account, email, portal", steps: [
+      { t: "Wait out a lockout", b: "If it said your account is locked, wait 15 minutes before trying again. Every extra wrong try can restart the timer." },
+      { t: "Use the self-service reset", b: "On the school sign-in page, click “Forgot password?” or “Can't access your account?” and follow the steps. You'll need the phone or personal email you registered." },
+      { t: "Pick a strong new password", b: "Use at least 12 characters with a mix of words and numbers. It can't match your last few passwords." },
+      { t: "Update it everywhere", b: { _: "Sign in again with the new password on every device where you use your school account (phone email app, laptop, Teams). Old saved passwords cause new lockouts.", ios: "Go to Settings › Mail › Accounts and update your school account, and sign in again in Outlook or Teams.", android: "Open your email and Teams apps and sign in again with the new password." } },
+    ]},
+    es: { label: "Olvidé mi contraseña o estoy bloqueado", sub: "Cuenta escolar, correo, portal", steps: [
+      { t: "Espera a que pase el bloqueo", b: "Si dice que tu cuenta está bloqueada, espera 15 minutos antes de volver a intentarlo. Cada intento fallido puede reiniciar el tiempo." },
+      { t: "Usa el restablecimiento por tu cuenta", b: "En la página de inicio de sesión de la escuela, haz clic en “¿Olvidaste tu contraseña?” o “¿No puedes acceder a tu cuenta?” y sigue los pasos. Necesitarás el teléfono o correo personal que registraste." },
+      { t: "Elige una contraseña nueva y segura", b: "Usa al menos 12 caracteres con palabras y números. No puede ser igual a tus últimas contraseñas." },
+      { t: "Actualízala en todos lados", b: { _: "Vuelve a iniciar sesión con la nueva contraseña en cada dispositivo donde usas tu cuenta escolar (correo del teléfono, laptop, Teams). Las contraseñas viejas guardadas causan nuevos bloqueos.", ios: "Ve a Configuración › Mail › Cuentas, actualiza tu cuenta escolar y vuelve a iniciar sesión en Outlook o Teams.", android: "Abre tus apps de correo y Teams e inicia sesión de nuevo con la nueva contraseña." } },
+    ]}},
+  { id: "mfa", school: "reset",
+    en: { label: "Two-step verification problem", sub: "Authenticator codes, new phone", steps: [
+      { t: "Check the time on your phone", b: "Authenticator codes depend on the clock. Make sure your phone's date and time are set to automatic." },
+      { t: "Open the Authenticator app", b: "Some sign-ins send a notification you must approve inside the app. Open the app directly and look for a pending request, and type in the number shown on screen if asked." },
+      { t: "Try another verification method", b: "On the sign-in screen click “Sign in another way” or “I can't use my Authenticator app” to get a text or call instead." },
+      { t: "Got a new phone?", b: "If your old phone is gone or reset, the app on the new phone won't have your account. IT needs to reset your verification so you can set it up again." },
+    ]},
+    es: { label: "Problema con la verificación en dos pasos", sub: "Códigos de Authenticator, teléfono nuevo", steps: [
+      { t: "Revisa la hora de tu teléfono", b: "Los códigos dependen del reloj. Asegúrate de que la fecha y hora de tu teléfono estén en automático." },
+      { t: "Abre la app Authenticator", b: "Algunos inicios de sesión envían una notificación que debes aprobar dentro de la app. Abre la app y busca una solicitud pendiente, y escribe el número que aparece en pantalla si te lo pide." },
+      { t: "Prueba otro método de verificación", b: "En la pantalla de inicio haz clic en “Iniciar sesión de otra forma” o “No puedo usar mi app Authenticator” para recibir un mensaje o llamada." },
+      { t: "¿Tienes un teléfono nuevo?", b: "Si ya no tienes tu teléfono anterior o lo reiniciaste, la app en el nuevo no tendrá tu cuenta. IT debe restablecer tu verificación para que la configures otra vez." },
+    ]}},
+  { id: "wifi", school: "wifi",
+    en: { label: "Can't connect to Wi-Fi", sub: "No internet, keeps dropping", steps: [
+      { t: "Turn Wi-Fi off and on", b: { _: "Click the Wi-Fi icon in the taskbar, turn Wi-Fi off, wait 10 seconds, turn it back on. Check that Airplane mode is off.", mac: "Click the Wi-Fi icon in the menu bar, turn Wi-Fi off, wait 10 seconds, turn it back on.", cros: "Click the clock at the bottom right, turn Wi-Fi off and back on.", ios: "Open Settings › Wi-Fi, switch it off and on. Check Airplane mode is off in Control Center.", android: "Swipe down from the top, tap Wi-Fi off and back on. Check Airplane mode is off." } },
+      { t: "Pick the right network", b: "Connect to the school's student network, not a guest or neighbor's network. If it asks for a username, use your full school email and school password." },
+      { t: "Forget the network and reconnect", b: { _: "Settings › Network & internet › Wi-Fi › Manage known networks, choose the school network, click Forget, then connect again.", mac: "System Settings › Wi-Fi, click the ⋯ next to the school network, choose Forget This Network, then reconnect.", cros: "Settings › Network › Wi-Fi, choose the school network, click Forget, then reconnect.", ios: "Settings › Wi-Fi, tap the ⓘ next to the network, tap Forget This Network, then reconnect.", android: "Settings › Wi-Fi, tap the gear next to the network, tap Forget, then reconnect." } },
+      { t: "Restart the device", b: "A full restart clears most network glitches. Turn it completely off, wait 10 seconds, turn it on." },
+      { t: "Check if it's just you", b: "Ask someone nearby if their Wi-Fi works. If nobody's does, the network may be down in that room, and that's useful for IT to know. Mention the room in your ticket." },
+    ]},
+    es: { label: "No me puedo conectar al Wi-Fi", sub: "Sin internet, se desconecta", steps: [
+      { t: "Apaga y enciende el Wi-Fi", b: { _: "Haz clic en el ícono de Wi-Fi en la barra de tareas, apágalo, espera 10 segundos y enciéndelo. Revisa que el modo avión esté apagado.", mac: "Haz clic en el ícono de Wi-Fi en la barra de menú, apágalo, espera 10 segundos y enciéndelo.", cros: "Haz clic en el reloj abajo a la derecha, apaga y vuelve a encender el Wi-Fi.", ios: "Abre Configuración › Wi-Fi, apágalo y enciéndelo. Revisa que el modo avión esté apagado en el Centro de control.", android: "Desliza desde arriba, apaga y enciende el Wi-Fi. Revisa que el modo avión esté apagado." } },
+      { t: "Elige la red correcta", b: "Conéctate a la red de estudiantes de la escuela, no a una red de invitados o de un vecino. Si pide usuario, usa tu correo escolar completo y tu contraseña escolar." },
+      { t: "Olvida la red y vuelve a conectarte", b: { _: "Configuración › Red e internet › Wi-Fi › Administrar redes conocidas, elige la red de la escuela, haz clic en Olvidar y vuelve a conectarte.", mac: "Configuración del Sistema › Wi-Fi, haz clic en ⋯ junto a la red escolar, elige Olvidar esta red y vuelve a conectarte.", cros: "Configuración › Red › Wi-Fi, elige la red escolar, haz clic en Olvidar y vuelve a conectarte.", ios: "Configuración › Wi-Fi, toca ⓘ junto a la red, toca Omitir esta red y vuelve a conectarte.", android: "Configuración › Wi-Fi, toca el engranaje junto a la red, toca Olvidar y vuelve a conectarte." } },
+      { t: "Reinicia el dispositivo", b: "Un reinicio completo arregla la mayoría de las fallas de red. Apágalo por completo, espera 10 segundos y enciéndelo." },
+      { t: "Revisa si solo te pasa a ti", b: "Pregunta a alguien cerca si su Wi-Fi funciona. Si a nadie le funciona, la red puede estar caída en ese salón, y eso le sirve a IT. Menciona el salón en tu ticket." },
+    ]}},
+  { id: "email",
+    en: { label: "Email, Teams or student portal", sub: "Won't load, won't sign in", steps: [
+      { t: "Try it in a web browser", b: "Go to the school's email or portal website in a browser instead of the app. If it works there, the problem is the app, not your account." },
+      { t: "Use a private window", b: "Open a private / incognito window and sign in there. This rules out old saved logins from another account." },
+      { t: "Sign out of everything and back in", b: "In the app, sign out completely, close it, reopen it and sign in with your full school email." },
+      { t: "Update or reinstall the app", b: { _: "Check for updates to Outlook or Teams. If it still fails, uninstall and reinstall it.", ios: "Update the app in the App Store. If that doesn't help, delete it and reinstall.", android: "Update the app in the Play Store. If that doesn't help, uninstall and reinstall." } },
+    ]},
+    es: { label: "Correo, Teams o portal estudiantil", sub: "No carga, no inicia sesión", steps: [
+      { t: "Pruébalo en un navegador", b: "Entra al sitio del correo o portal escolar en un navegador en lugar de la app. Si funciona ahí, el problema es la app, no tu cuenta." },
+      { t: "Usa una ventana privada", b: "Abre una ventana privada / de incógnito e inicia sesión ahí. Así descartas sesiones guardadas de otra cuenta." },
+      { t: "Cierra sesión en todo y vuelve a entrar", b: "En la app, cierra sesión por completo, ciérrala, vuelve a abrirla e inicia sesión con tu correo escolar completo." },
+      { t: "Actualiza o reinstala la app", b: { _: "Busca actualizaciones de Outlook o Teams. Si sigue fallando, desinstálala y vuelve a instalarla.", ios: "Actualiza la app en el App Store. Si no ayuda, bórrala y vuelve a instalarla.", android: "Actualiza la app en Play Store. Si no ayuda, desinstálala y vuelve a instalarla." } },
+    ]}},
+  { id: "slow",
+    en: { label: "Slow, freezing or crashing", sub: "Takes forever, programs hang", steps: [
+      { t: "Restart it", b: "Shutting the lid isn't a restart. Choose Restart from the power menu. This fixes more slowdowns than anything else." },
+      { t: "Close what you aren't using", b: { _: "Close extra browser tabs and programs. Open Task Manager (Ctrl + Shift + Esc) to see what's using the most memory.", mac: "Quit apps you're not using (Cmd + Q). Open Activity Monitor to see what's using the most memory.", cros: "Close extra tabs. Press Search + Esc to open Task Manager.", ios: "Swipe up and close apps you're not using.", android: "Open recent apps and close the ones you aren't using." } },
+      { t: "Check storage space", b: { _: "If your drive is almost full the computer slows down. Settings › System › Storage shows what's taking space.", mac: "Apple menu › System Settings › General › Storage.", cros: "Settings › Device › Storage management.", ios: "Settings › General › iPhone/iPad Storage.", android: "Settings › Storage." } },
+      { t: "Install updates", b: "Install any pending system updates, then restart once more." },
+    ]},
+    es: { label: "Lento, se congela o se cierra", sub: "Tarda mucho, los programas se traban", steps: [
+      { t: "Reinícialo", b: "Cerrar la tapa no es reiniciar. Elige Reiniciar en el menú de encendido. Esto arregla más lentitud que cualquier otra cosa." },
+      { t: "Cierra lo que no estés usando", b: { _: "Cierra pestañas y programas de más. Abre el Administrador de tareas (Ctrl + Shift + Esc) para ver qué usa más memoria.", mac: "Cierra las apps que no usas (Cmd + Q). Abre el Monitor de Actividad para ver qué usa más memoria.", cros: "Cierra pestañas de más. Presiona Buscar + Esc para abrir el Administrador de tareas.", ios: "Desliza hacia arriba y cierra las apps que no usas.", android: "Abre las apps recientes y cierra las que no usas." } },
+      { t: "Revisa el espacio de almacenamiento", b: { _: "Si el disco está casi lleno, la computadora se pone lenta. Configuración › Sistema › Almacenamiento muestra qué ocupa espacio.", mac: "Menú Apple › Configuración del Sistema › General › Almacenamiento.", cros: "Configuración › Dispositivo › Administración de almacenamiento.", ios: "Configuración › General › Almacenamiento del iPhone/iPad.", android: "Configuración › Almacenamiento." } },
+      { t: "Instala las actualizaciones", b: "Instala las actualizaciones pendientes del sistema y reinicia una vez más." },
+    ]}},
+  { id: "power",
+    en: { label: "Won't turn on or charge", sub: "Black screen, battery dead", steps: [
+      { t: "Charge it for 15 minutes", b: "Plug it into a wall outlet with the original charger and leave it for 15 minutes before trying." },
+      { t: "Check the charger and port", b: "Look for a light on the charger or device. Try a different outlet and, if you can, a different charger. Check the port for lint or damage." },
+      { t: "Force restart", b: { _: "Unplug, hold the power button for 15 seconds, release, then press it once normally.", mac: "Hold the power button (or Touch ID) for 10 seconds, release, then press again.", cros: "Hold Refresh ⟳ and tap Power, then release Refresh.", ios: "Press volume up, press volume down, then hold the side button until the Apple logo appears.", android: "Hold Power and Volume Down together for 10–20 seconds." } },
+      { t: "Look for physical damage", b: "Swelling, a cracked case, liquid spills or a burning smell mean stop using it and leave it unplugged. Say so in your ticket." },
+    ]},
+    es: { label: "No enciende o no carga", sub: "Pantalla negra, batería muerta", steps: [
+      { t: "Cárgalo por 15 minutos", b: "Conéctalo a un enchufe de pared con el cargador original y déjalo 15 minutos antes de intentarlo." },
+      { t: "Revisa el cargador y el puerto", b: "Busca una luz en el cargador o el dispositivo. Prueba otro enchufe y, si puedes, otro cargador. Revisa que el puerto no tenga pelusa ni daño." },
+      { t: "Fuerza el reinicio", b: { _: "Desconéctalo, mantén el botón de encendido 15 segundos, suéltalo y presiónalo una vez normalmente.", mac: "Mantén el botón de encendido (o Touch ID) 10 segundos, suéltalo y presiónalo otra vez.", cros: "Mantén presionado Actualizar ⟳ y toca Encendido, luego suelta Actualizar.", ios: "Presiona subir volumen, presiona bajar volumen y mantén el botón lateral hasta que aparezca la manzana.", android: "Mantén Encendido y Bajar volumen juntos por 10–20 segundos." } },
+      { t: "Busca daño físico", b: "Si está hinchado, con la carcasa rota, mojado o huele a quemado, deja de usarlo y déjalo desconectado. Dilo en tu ticket." },
+    ]}},
+  { id: "audio",
+    en: { label: "Camera, mic or sound", sub: "For online class or Teams", steps: [
+      { t: "Check mute and volume", b: "Check the volume and mute keys on the device, and the mute button inside the meeting app." },
+      { t: "Pick the right device in the app", b: "In Teams or Zoom, open device settings and choose the correct speaker, microphone and camera (headset vs built-in)." },
+      { t: "Allow access", b: { _: "Settings › Privacy & security › Camera / Microphone, make sure apps are allowed.", mac: "System Settings › Privacy & Security › Camera / Microphone, turn on your meeting app or browser.", cros: "Click the lock icon in the browser address bar and allow camera and microphone.", ios: "Settings › Privacy & Security › Camera / Microphone, turn on your meeting app.", android: "Settings › Apps › your meeting app › Permissions, allow camera and microphone." } },
+      { t: "Close other apps using the camera", b: "Only one app can use the camera at a time. Quit other meeting apps, then restart the device if needed." },
+    ]},
+    es: { label: "Cámara, micrófono o sonido", sub: "Para clases en línea o Teams", steps: [
+      { t: "Revisa el silencio y el volumen", b: "Revisa las teclas de volumen y silencio del dispositivo, y el botón de silencio dentro de la app de la reunión." },
+      { t: "Elige el dispositivo correcto en la app", b: "En Teams o Zoom, abre la configuración de dispositivos y elige el altavoz, micrófono y cámara correctos (audífonos o integrados)." },
+      { t: "Permite el acceso", b: { _: "Configuración › Privacidad y seguridad › Cámara / Micrófono, asegúrate de que las apps tengan permiso.", mac: "Configuración del Sistema › Privacidad y seguridad › Cámara / Micrófono, activa tu app de reuniones o navegador.", cros: "Haz clic en el candado de la barra de direcciones y permite la cámara y el micrófono.", ios: "Configuración › Privacidad y seguridad › Cámara / Micrófono, activa tu app de reuniones.", android: "Configuración › Apps › tu app de reuniones › Permisos, permite cámara y micrófono." } },
+      { t: "Cierra otras apps que usen la cámara", b: "Solo una app puede usar la cámara a la vez. Cierra otras apps de reuniones y reinicia el dispositivo si hace falta." },
+    ]}},
+  { id: "printer",
+    en: { label: "Can't print", sub: "Nothing comes out, printer missing", steps: [
+      { t: "Check the printer itself", b: "Is it on, with paper and no blinking error light? Clear any paper jam shown on its screen." },
+      { t: "Be on the school network", b: "Printing usually only works on the school Wi-Fi, not on mobile data or a guest network." },
+      { t: "Choose the right printer", b: "In the print window, make sure the printer for your room is selected, not “Microsoft Print to PDF” or a home printer." },
+      { t: "Clear the queue and retry", b: "Cancel any stuck jobs, restart your device, and print once more. Note the printer name or room in your ticket if it still fails." },
+    ]},
+    es: { label: "No puedo imprimir", sub: "No sale nada, no aparece la impresora", steps: [
+      { t: "Revisa la impresora", b: "¿Está encendida, con papel y sin luces de error parpadeando? Quita cualquier atasco que muestre su pantalla." },
+      { t: "Conéctate a la red escolar", b: "Imprimir normalmente solo funciona en el Wi-Fi de la escuela, no con datos móviles ni en la red de invitados." },
+      { t: "Elige la impresora correcta", b: "En la ventana de impresión, asegúrate de elegir la impresora de tu salón, no “Microsoft Print to PDF” ni una impresora de casa." },
+      { t: "Limpia la cola y vuelve a intentar", b: "Cancela trabajos atascados, reinicia tu dispositivo e imprime otra vez. Anota el nombre de la impresora o el salón en tu ticket si sigue fallando." },
+    ]}},
+  { id: "screen",
+    en: { label: "Screen or display issue", sub: "Cracked, flickering, black", steps: [
+      { t: "Check brightness and external displays", b: "Turn brightness up. If a projector or monitor is attached, unplug it and see if the main screen comes back." },
+      { t: "Restart the device", b: "A full restart fixes many flickering or frozen screens." },
+      { t: "Physical damage", b: "If the screen is cracked, has lines, or is leaking color, stop pressing on it and back up anything important. IT will need to look at it in person." },
+    ]},
+    es: { label: "Problema con la pantalla", sub: "Rota, parpadea, negra", steps: [
+      { t: "Revisa el brillo y las pantallas externas", b: "Sube el brillo. Si hay un proyector o monitor conectado, desconéctalo y mira si vuelve la pantalla principal." },
+      { t: "Reinicia el dispositivo", b: "Un reinicio completo arregla muchas pantallas que parpadean o se congelan." },
+      { t: "Daño físico", b: "Si la pantalla está rota, tiene líneas o manchas de color, no la presiones y respalda lo importante. IT tendrá que revisarla en persona." },
+    ]}},
+  { id: "software",
+    en: { label: "App or program won't work", sub: "Won't install, open or update", steps: [
+      { t: "Restart and try again", b: "Close the program completely, restart the device, and open it again." },
+      { t: "Check for updates", b: "Update both the app and the operating system, then try again." },
+      { t: "Check if you need permission", b: "School devices may block installs. If you see “ask your administrator”, IT needs to install it for you. Include the app name in your ticket." },
+      { t: "Reinstall", b: "If it's on your own device, uninstall the app and install it again from the official store or website." },
+    ]},
+    es: { label: "Una app o programa no funciona", sub: "No se instala, no abre o no actualiza", steps: [
+      { t: "Reinicia y vuelve a intentar", b: "Cierra el programa por completo, reinicia el dispositivo y ábrelo otra vez." },
+      { t: "Busca actualizaciones", b: "Actualiza la app y el sistema operativo, y vuelve a intentarlo." },
+      { t: "Revisa si necesitas permiso", b: "Los dispositivos escolares pueden bloquear instalaciones. Si ves “pide a tu administrador”, IT debe instalarla por ti. Incluye el nombre de la app en tu ticket." },
+      { t: "Reinstala", b: "Si es tu propio dispositivo, desinstala la app e instálala otra vez desde la tienda o sitio oficial." },
+    ]}},
+  { id: "other",
+    en: { label: "Something else", sub: "Describe it and IT will help", steps: [] },
+    es: { label: "Otra cosa", sub: "Descríbelo y IT te ayudará", steps: [] } },
+];
+const issueOf = id => ISSUES.find(i => i.id === id) || ISSUES[ISSUES.length - 1];
+const I = (issue, l = lang) => issue[l] || issue.en;
+const DL = (d, l = lang) => (d[l] || d.en)[0];
+
+const STATUS = { new: "Open", progress: "In progress", waiting: "Waiting on student", resolved: "Resolved", self: "Fixed with guide" };
+
+// ---------- Helpers ----------
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "text") el.textContent = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : String(kid));
+  return el;
+}
+const rid = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
+const newTicketId = () => { const d = new Date(); return "HD-" + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + "-" + rid(4); };
+function ago(iso) {
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " hr ago";
+  const d = Math.floor(s / 86400);
+  return d === 1 ? "yesterday" : d < 7 ? d + " days ago" : new Date(iso).toLocaleDateString();
+}
+const when = iso => new Date(iso).toLocaleString(lang === "es" ? "es" : [], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+async function copy(text, btn) {
+  try { await navigator.clipboard.writeText(text); toast("Copied"); }
+  catch { const r = document.createRange(); r.selectNodeContents(btn.previousSibling || btn); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Press Ctrl+C to copy"); }
+}
+const stepBody = (step, deviceId) => typeof step.b === "string" ? step.b : (step.b[devOf(deviceId).g] || step.b._);
+const pill = s => h("span", { class: "pill s-" + s, text: STATUS[s] || s });
+const spill = s => h("span", { class: "pill s-" + s, text: T("st")[s] || s });
+const digits = s => (s || "").replace(/\D/g, "");
+const safeUrl = u => /^https?:\/\/\S+$/i.test((u || "").trim()) ? u.trim() : null;
+const blobUrl = id => "/_blob/" + encodeURIComponent(id);
+
+// ---------- Backend (shared ticket store) ----------
+let db = null, user = null, assets = null, uid = null, isDesk = false, canWrite = true;
+let myDoc = null, myReplies = null, allDocs = [], allReplies = {}, school = {}, blocked = {};
+let authChecked = false, deskLoaded = false;
+const ready = (async () => {
+  try {
+    [db, user, assets] = await Promise.all(["db", "user", "assets"].map(n => window.claude?.use?.(n) ?? null));
+    if (user) {
+      uid = await user.id();
+      isDesk = (await user.canEdit()) || (await user.isOwner());
+      if ((await user.can("data.write")) === false) canWrite = false;
+    }
+  } catch { db = null; }
+  if (!db || !uid) { db = null; canWrite = false; }
+  return !!db;
+})();
+
+ready.then(ok => {
+  if (!ok) return;
+  db.doc("tickets/" + uid).onSnapshot(snap => { myDoc = snap.exists ? snap.data() : null; renderMine(); }, () => {});
+  db.doc("replies/" + uid).onSnapshot(snap => { myReplies = snap.exists ? snap.data() : null; renderMine(); }, () => {});
+  db.doc("config/school").onSnapshot(snap => { const d = snap.exists ? snap.data() : {}; school = d && typeof d === "object" ? d : {}; renderSchoolBits(); }, () => {});
+  db.doc("config/blocked").onSnapshot(snap => { const d = snap.exists ? snap.data()?.uids : null; blocked = d && typeof d === "object" ? d : {}; renderDesk(); }, () => {});
+  if (isDesk) {
+    db.collection("tickets").onSnapshot(snap => { allDocs = snap.docs.map(d => ({ uid: d.id, data: d.data() })); deskLoaded = true; renderDesk(); }, () => {});
+    db.collection("replies").onSnapshot(snap => { allReplies = Object.fromEntries(snap.docs.map(d => [d.id, d.data()])); renderDesk(); }, () => {});
+  }
+}).finally(() => { authChecked = true; renderHelp(); renderMine(); renderDesk(); });
+
+async function writeDoc(path, patch) {
+  const ref = db.doc(path);
+  const snap = await ref.get();
+  if (snap.exists) await ref.update(patch);
+  else await ref.set(patch);
+}
+// Students write only their own tickets/<id>. Status and IT replies live in replies/<id>, which only IT can write.
+const writeTicket = (ownerUid, patch) => writeDoc("tickets/" + ownerUid, patch);
+const writeReply = (ownerUid, tid, patch) => writeDoc("replies/" + ownerUid, { tickets: { [tid]: patch } });
+async function removeEntry(path, tid) {
+  const ref = db.doc(path), snap = await ref.get();
+  if (!snap.exists) return;
+  const data = JSON.parse(JSON.stringify(snap.data() || {}));
+  if (data.tickets && typeof data.tickets === "object") delete data.tickets[tid];
+  await ref.set(data);
+}
+
+// ---------- Ticket data hygiene ----------
+// Ticket rows come from students, so every field is checked and capped before anything is shown or counted.
+const LIM = { name: 80, email: 120, phone: 30, details: 2000, room: 80, deviceOther: 60, msg: 1000 };
+const str = (v, max) => typeof v === "string" ? v.slice(0, max) : "";
+const isoOk = v => typeof v === "string" && v.length <= 40 && !isNaN(Date.parse(v)) ? v : "";
+const ID_RE = /^HD-\d{4}-[A-Z0-9]{4}$/;
+function msgs(raw, from) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  return Object.entries(raw).slice(0, 200).map(([k, m]) => m && typeof m === "object" ? { k, from, text: str(m.text, LIM.msg), at: isoOk(m.at) } : null)
+    .filter(m => m && m.text && m.at).slice(-60);
+}
+const maxIso = (...xs) => xs.filter(Boolean).sort().pop() || "";
+function viewTicket(key, t, rep, ownerUid) {
+  if (!t || typeof t !== "object" || Array.isArray(t) || !ID_RE.test(key) || t.id !== key) return null;
+  const createdAt = isoOk(t.createdAt); if (!createdAt) return null;
+  const r = rep && typeof rep === "object" && !Array.isArray(rep) ? rep : {};
+  const sMsgs = msgs(t.messages, "student").filter(m => (t.messages[m.k] || {}).from !== "it");
+  const iMsgs = msgs(r.messages, "it");
+  const statusAt = isoOk(r.statusAt) || createdAt;
+  const base = ["new", "progress", "waiting", "resolved"].includes(r.status) ? r.status : (t.status === "self" ? "self" : "new");
+  const lastStudentMsg = sMsgs.length ? sMsgs.map(m => m.at).sort().pop() : "";
+  let status = base;
+  if ((base === "resolved" || base === "self") && lastStudentMsg > statusAt) status = "new";
+  else if (base === "waiting" && lastStudentMsg > statusAt) status = "progress";
+  const ratedAt = isoOk(t.ratedAt);
+  const rating = status === "resolved" && (t.rating === "up" || t.rating === "down") && ratedAt > statusAt ? t.rating : null;
+  const lastItAt = maxIso(isoOk(r.statusAt), ...iMsgs.map(m => m.at));
+  const studentActivity = maxIso(base !== "self" ? createdAt : "", lastStudentMsg, rating === "down" ? ratedAt : "");
+  const iss = issueOf(t.issue), dev = devOf(t.device);
+  return {
+    _uid: ownerUid, id: key, createdAt, status, statusAt, rating, urgent: t.urgent === true && base !== "self", lang: t.lang === "es" ? "es" : "en",
+    name: str(t.name, LIM.name) || "(no name)", email: str(t.email, LIM.email), phone: str(t.phone, LIM.phone),
+    device: dev.id, deviceLabel: str(t.deviceLabel, LIM.deviceOther) || DL(dev, "en"), issue: iss.id, issueLabel: iss.en.label,
+    details: str(t.details, LIM.details), room: str(t.room, LIM.room),
+    tried: Array.isArray(t.tried) ? t.tried.filter(x => typeof x === "string").slice(0, 12).map(x => x.slice(0, 120)) : [],
+    photos: Array.isArray(t.photos) ? t.photos.filter(x => typeof x === "string" && /^[0-9a-f]{32}$/.test(x)).slice(0, 3) : [],
+    messages: [...sMsgs, ...iMsgs].sort((a, b) => a.at.localeCompare(b.at)),
+    deskUnread: studentActivity > (isoOk(r.seenAt) || ""),
+    studentUnread: !!lastItAt && lastItAt > (isoOk(t.seenAt) || createdAt),
+    updatedAt: maxIso(createdAt, statusAt, lastStudentMsg, ...iMsgs.map(m => m.at)),
+  };
+}
+function ticketsOf(doc, repDoc, ownerUid) {
+  const tk = doc?.tickets, rp = repDoc?.tickets;
+  if (!tk || typeof tk !== "object" || Array.isArray(tk)) return [];
+  const out = [];
+  for (const k of Object.keys(tk).slice(0, 300)) {
+    try { const v = viewTicket(k, tk[k], rp && typeof rp === "object" ? rp[k] : null, ownerUid); if (v) out.push(v); } catch {}
+  }
+  return out;
+}
+
+// ---------- Views ----------
+let current = "help";
+function show(v) {
+  current = v;
+  for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t.dataset.view === v));
+  for (const id of ["help", "mine", "desk"]) $("#view-" + id).hidden = id !== v;
+  if (v === "desk") renderDesk();
+  if (v === "mine") renderMine();
+  window.scrollTo({ top: 0 });
+}
+for (const t of document.querySelectorAll(".tab")) t.addEventListener("click", () => show(t.dataset.view));
+
+function setLang(l) {
+  lang = l;
+  try { localStorage.setItem("hd:lang", l); } catch {}
+  document.documentElement.lang = l;
+  for (const b of document.querySelectorAll("#lang button")) b.setAttribute("aria-pressed", String(b.dataset.lang === l));
+  $("#tab-help").textContent = T("tabHelp");
+  $("#tab-mine").textContent = T("tabMine");
+  renderHelp(); renderMine();
+}
+for (const b of document.querySelectorAll("#lang button")) b.addEventListener("click", () => setLang(b.dataset.lang));
+
+// ---------- School info (set by IT on the desk page) ----------
+function schoolBanner() {
+  return school.notice ? h("div", { class: "banner", role: "status" }, h("b", { text: T("notice") }), h("p", { text: school.notice })) : null;
+}
+function schoolCard() {
+  const items = [[T("hours"), school.hours], [T("location"), school.location], [T("contact"), school.contact]].filter(x => x[1]);
+  return items.length ? h("div", { class: "infocard", "aria-label": T("deskInfo") }, items.map(([k, v]) => h("div", {}, h("span", { text: k }), h("b", { text: v })))) : null;
+}
+function schoolBox(kind) {
+  if (kind === "reset" && safeUrl(school.resetUrl)) return h("div", { class: "schoolbox" }, h("span", { text: T("resetBox") }), h("a", { href: safeUrl(school.resetUrl), target: "_blank", rel: "noopener", text: safeUrl(school.resetUrl) }));
+  if (kind === "wifi" && school.wifiName) return h("div", { class: "schoolbox" }, h("span", {}, T("wifiBox"), " ", h("b", { class: "tid", text: school.wifiName })), school.wifiNote ? h("span", { text: school.wifiNote }) : null);
+  return null;
+}
+function renderSchoolBits() {
+  if (current === "help" && W.stage !== "done" && !document.activeElement?.matches("input, textarea")) renderHelp();
+  if (current === "desk") renderDesk();
+}
+
+// ---------- Quick fixes search ----------
+let qfQuery = "";
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "");
+function quickFixes() {
+  const res = h("div", { class: "qf-res", id: "qf-res" });
+  const input = h("input", { type: "text", id: "qf-q", placeholder: T("qfPh"), value: qfQuery, "aria-label": T("qfTitle") });
+  const fillRes = () => {
+    res.replaceChildren();
+    const words = norm(qfQuery).split(/\s+/).filter(w => w.length > 1);
+    if (!words.length) return;
+    const hits = [];
+    for (const is of ISSUES) {
+      const L = I(is);
+      L.steps.forEach(st => {
+        const body = stepBody(st, W.device || "win");
+        const hay = norm([L.label, L.sub, st.t, body, is.en.label].join(" "));
+        const score = words.filter(w => hay.includes(w)).length;
+        if (score) hits.push({ score, label: L.label, st, body });
+      });
+    }
+    hits.sort((a, b) => b.score - a.score);
+    if (!hits.length) return res.append(h("p", { class: "meta", style: "margin:0", text: T("qfNone") }));
+    for (const x of hits.slice(0, 6)) res.append(h("details", {}, h("summary", {}, x.st.t, h("small", { text: x.label })), h("p", { text: x.body })));
+  };
+  input.addEventListener("input", e => { qfQuery = e.target.value; fillRes(); });
+  fillRes();
+  return h("div", { class: "qf" }, h("div", { class: "qf-in" },
+    input), res);
+}
+
+// ---------- Get help wizard ----------
+// Every submission resets to a blank ticket, so nothing from one student carries over to the next.
+const blankW = () => ({ stage: "contact", name: "", email: "", phone: "", device: "", deviceOther: "", issue: "", details: "", urgent: false, room: "", stepIdx: 0, tried: [], photos: [], uploading: 0, result: null, errors: {} });
+let W = blankW(), resetTimer = null, resetLeft = 0;
+function newTicket() { clearInterval(resetTimer); resetTimer = null; W = blankW(); qfQuery = ""; window.hdOnNewTicket?.(); if (current === "help") window.scrollTo({ top: 0 }); renderHelp(); }
+function startResetCountdown() {
+  clearInterval(resetTimer); resetLeft = 10;
+  resetTimer = setInterval(() => {
+    resetLeft--;
+    if (resetLeft <= 0) return newTicket();
+    const el = document.getElementById("reset-left"); if (el) el.textContent = T("resetIn")(resetLeft);
+  }, 1000);
+}
+
+function stepper() {
+  const stages = [["contact", T("sAbout")], ["problem", T("sProblem")], ["guide", T("sGuide")], ["done", T("sTicket")]];
+  const at = stages.findIndex(s => s[0] === W.stage);
+  return h("div", { class: "stepper", "aria-label": "Progress" }, stages.map(([k, label], i) => [
+    i ? h("i") : null,
+    h("span", { class: i === at ? "on" : i < at ? "done" : "" }, h("b", {}, i < at ? "✓" : i + 1), label),
+  ]));
+}
+
+function renderHelp() {
+  const root = $("#view-help");
+  const focusId = document.activeElement?.id;
+  root.replaceChildren();
+  root.append(schoolBanner() || "", h("div", { class: "lede" }, h("h1", { text: T("h1") }), h("p", { text: T("lede") })));
+  if (W.stage === "contact" || W.stage === "problem") {
+    const qf = quickFixes();
+    root.append(h("div", { class: "sect" }, h("h4", { text: T("qfTitle") }), qf));
+    qf.querySelector(".qf-in").prepend(svgSearch());
+  }
+  const p = h("div", { class: "panel" }, stepper());
+  root.append(p);
+  ({ contact: stageContact, problem: stageProblem, guide: stageGuide, done: stageDone, blocked: stageBlocked })[W.stage](p);
+  const card = schoolCard(); if (card) root.append(card);
+  if (focusId && document.getElementById(focusId)) { const el = document.getElementById(focusId); el.focus(); if (el.setSelectionRange && el.value && el.type !== "email") try { el.setSelectionRange(el.value.length, el.value.length); } catch {} }
+}
+function svgSearch() {
+  const ns = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(ns, "svg"); s.setAttribute("width", "16"); s.setAttribute("height", "16"); s.setAttribute("viewBox", "0 0 16 16"); s.setAttribute("aria-hidden", "true");
+  const c = document.createElementNS(ns, "circle"); c.setAttribute("cx", "7"); c.setAttribute("cy", "7"); c.setAttribute("r", "5"); c.setAttribute("fill", "none"); c.setAttribute("stroke", "var(--muted)"); c.setAttribute("stroke-width", "1.8");
+  const l = document.createElementNS(ns, "path"); l.setAttribute("d", "M11 11l3.5 3.5"); l.setAttribute("stroke", "var(--muted)"); l.setAttribute("stroke-width", "1.8"); l.setAttribute("stroke-linecap", "round");
+  s.append(c, l); return s;
+}
+
+function field(id, label, type, val, opts = {}) {
+  const inp = h(type === "textarea" ? "textarea" : "input", { id, type: type === "textarea" ? null : type, placeholder: opts.ph, autocomplete: opts.ac, inputmode: opts.im, maxlength: LIM[opts.key] || null });
+  inp.value = val;
+  inp.addEventListener("input", e => { W[opts.key] = e.target.value; });
+  return h("label", { class: "f", for: id }, h("span", {}, label, opts.hint ? h("small", { text: "  " + opts.hint }) : null), inp, W.errors[opts.key] ? h("span", { class: "err", text: W.errors[opts.key] }) : null);
+}
+
+function stageContact(p) {
+  p.append(h("h2", { text: T("contactH") }),
+    h("div", { class: "grid2" },
+      field("f-name", T("name"), "text", W.name, { key: "name", ac: "off", ph: T("namePh") }),
+      field("f-email", T("email"), "email", W.email, { key: "email", ac: "off", ph: "you@school.edu" }),
+      field("f-phone", T("phone"), "tel", W.phone, { key: "phone", ac: "off", im: "tel", ph: "(555) 123-4567", hint: T("phoneHint") })),
+    h("div", { class: "sect" }, h("h4", { text: T("deviceQ") }),
+      h("div", { class: "choices" }, DEVICES.map(d => h("button", { type: "button", class: "choice", "aria-pressed": String(W.device === d.id), onclick: () => { W.device = d.id; renderHelp(); } }, h("strong", { text: DL(d) }), h("span", { text: (d[lang] || d.en)[1] })))),
+      W.errors.device ? h("span", { class: "err", text: W.errors.device }) : null,
+      W.device === "other" ? field("f-devother", T("deviceOther"), "text", W.deviceOther, { key: "deviceOther", ph: T("deviceOtherPh") }) : null),
+    h("div", { class: "row end" }, h("button", { class: "btn primary", onclick: () => {
+      const e = {};
+      if (W.name.trim().length < 2) e.name = T("eName");
+      if (!/^\S+@\S+\.\S+$/.test(W.email.trim())) e.email = T("eEmail");
+      if (digits(W.phone).length < 10) e.phone = T("ePhone");
+      if (!W.device) e.device = T("eDevice");
+      W.errors = e;
+      if (Object.keys(e).length) return renderHelp();
+      W.stage = "problem"; renderHelp();
+    } }, T("next"))));
+}
+
+async function addPhotos(files) {
+  for (const f of files) {
+    if (W.photos.length + W.uploading >= 3) break;
+    if (!/^image\/(png|jpe?g|gif|webp|heic|heif)$/i.test(f.type)) { toast(T("eNotImage")); continue; }
+    if (f.size > 10 * 1024 * 1024) { toast(T("eTooBig")); continue; }
+    W.uploading++; renderHelp();
+    try {
+      const type = /heic|heif/i.test(f.type) ? undefined : f.type;
+      const r = await assets.upload(f, type ? { type } : undefined);
+      W.photos.push({ id: r.id, url: r.url });
+    } catch { toast(T("eUpload")); }
+    W.uploading--; renderHelp();
+  }
+}
+function photoPicker() {
+  if (!assets || !canWrite) return null;
+  const inp = h("input", { type: "file", id: "f-photo", accept: "image/*", multiple: true });
+  inp.addEventListener("change", e => { addPhotos([...e.target.files]); e.target.value = ""; });
+  return h("div", { class: "sect" }, h("h4", { text: T("photosH") }), h("span", { class: "meta", text: T("photosHint") }),
+    h("div", { class: "photos" },
+      W.photos.map((ph, i) => h("div", { class: "thumb" }, h("img", { src: ph.url, alt: "" }),
+        h("button", { class: "x", type: "button", "aria-label": T("remove"), onclick: () => { const [gone] = W.photos.splice(i, 1); assets.delete(gone.id).catch(() => {}); renderHelp(); } }, "×"))),
+      Array.from({ length: W.uploading }, () => h("div", { class: "thumb", text: T("uploading") })),
+      W.photos.length + W.uploading < 3 ? h("label", { class: "addphoto", for: "f-photo" }, T("addPhoto"), inp) : null));
+}
+
+function stageProblem(p) {
+  const steps = W.issue ? I(issueOf(W.issue)).steps : [1];
+  p.append(h("h2", { text: T("problemH") }),
+    h("div", { class: "choices issues" }, ISSUES.map(is => h("button", { type: "button", class: "choice", "aria-pressed": String(W.issue === is.id), onclick: () => { W.issue = is.id; W.errors = {}; renderHelp(); } }, h("strong", { text: I(is).label }), h("span", { text: I(is).sub })))),
+    W.errors.issue ? h("span", { class: "err", text: W.errors.issue }) : null,
+    field("f-details", T("describe"), "textarea", W.details, { key: "details", ph: T("describePh"), hint: W.issue === "other" ? T("req") : T("opt") }),
+    photoPicker(),
+    h("div", { class: "grid2" },
+      field("f-room", T("where"), "text", W.room, { key: "room", ph: T("wherePh"), hint: T("optional") }),
+      h("label", { class: "f", for: "f-urgent" }, T("urgentQ"),
+        h("select", { id: "f-urgent", onchange: e => W.urgent = e.target.value === "yes" },
+          h("option", { value: "no", selected: !W.urgent, text: T("urgentNo") }),
+          h("option", { value: "yes", selected: W.urgent, text: T("urgentYes") })))),
+    h("div", { class: "row" },
+      h("button", { class: "btn", onclick: () => { W.stage = "contact"; renderHelp(); } }, T("back")),
+      h("span", { style: "margin-left:auto" }),
+      h("button", { class: "btn primary", onclick: () => {
+        W.errors = {};
+        if (!W.issue) W.errors.issue = T("eIssue");
+        if (W.issue === "other" && W.details.trim().length < 5) W.errors.details = T("eDetails");
+        if (Object.keys(W.errors).length) return renderHelp();
+        if (W.uploading) return toast(T("waitUpload"));
+        W.stepIdx = 0; W.tried = [];
+        if (I(issueOf(W.issue)).steps.length) { W.stage = "guide"; renderHelp(); } else submit("new");
+      } }, steps.length ? T("startTs") : T("sendIT"))));
+}
+
+function stageGuide(p) {
+  const is = issueOf(W.issue), steps = I(is).steps, enSteps = is.en.steps, i = W.stepIdx, s = steps[i];
+  const triedUpTo = n => enSteps.slice(0, n).map(x => x.t);
+  p.append(
+    h("div", { class: "guide-head" }, h("h2", { text: I(is).label }), h("span", { class: "of", text: T("stepOf")(i + 1, steps.length) })),
+    h("div", { class: "progress", "aria-hidden": "true" }, h("div", { style: `width:${(i / steps.length) * 100}%` })),
+    schoolBox(is.school),
+    h("div", { class: "stepcard" }, h("h3", { text: s.t }), h("p", { text: stepBody(s, W.device) })),
+    h("div", { class: "tip", text: T("tsTip") }),
+    h("div", { class: "row" },
+      h("button", { class: "btn good", onclick: () => { W.tried = triedUpTo(i + 1); submit("self"); } }, T("fixed")),
+      h("button", { class: "btn primary", onclick: () => {
+        if (i + 1 < steps.length) { W.stepIdx++; renderHelp(); }
+        else { W.tried = triedUpTo(steps.length); submit("new"); }
+      } }, i + 1 < steps.length ? T("nextStep") : T("lastStep")),
+      h("button", { class: "link", style: "margin-left:auto", onclick: () => { W.tried = triedUpTo(i); submit("new"); } }, T("skip"))),
+    h("button", { class: "link", style: "justify-self:start", onclick: () => { W.stage = "problem"; renderHelp(); } }, T("backProblem")));
+}
+
+function buildTicket(status) {
+  const now = new Date().toISOString(), id = newTicketId(), issue = issueOf(W.issue), dev = devOf(W.device);
+  return {
+    id, createdAt: now, updatedAt: now, status, urgent: !!W.urgent && status !== "self", lang,
+    name: W.name.trim(), email: W.email.trim(), phone: W.phone.trim(),
+    device: dev.id, deviceLabel: dev.id === "other" && W.deviceOther.trim() ? W.deviceOther.trim() : DL(dev, "en"),
+    issue: issue.id, issueLabel: issue.en.label, details: W.details.trim(), room: W.room.trim(),
+    tried: W.tried.slice(), photos: W.photos.map(p => p.id), messages: {},
+  };
+}
+function ticketText(t) {
+  return [`Ticket ${t.id} — ${STATUS[t.status]}`, `Name: ${t.name}`, `Email: ${t.email}`, `Phone: ${t.phone}`, `Device: ${t.deviceLabel}`, `Problem: ${t.issueLabel}${t.urgent ? " (urgent)" : ""}`, t.room ? `Location: ${t.room}` : "", t.details ? `Details: ${t.details}` : "", t.tried?.length ? `Already tried: ${t.tried.join("; ")}` : "", t.lang === "es" ? "Prefers Spanish" : ""].filter(Boolean).join("\n");
+}
+
+function submitBlock() {
+  if (uid && blocked[uid]) return T("eBlocked");
+  const mine = ticketsOf(myDoc, myReplies, uid);
+  const recent = mine.filter(t => Date.now() - Date.parse(t.createdAt) < 15 * 60e3).length;
+  if (recent >= 3) return T("eLimit");
+  if (mine.filter(t => ["new", "progress", "waiting"].includes(t.status)).length >= 10) return T("eOpenLimit");
+  return null;
+}
+async function submit(status) {
+  await ready;
+  const stop = db ? submitBlock() : null;
+  if (stop) { W.blockedMsg = stop; W.stage = "blocked"; return renderHelp(); }
+  const t = buildTicket(status);
+  W.result = { ticket: t, saved: false, error: null };
+  W.stage = "done"; renderHelp();
+  await ready;
+  if (!db || !canWrite) { W.result.error = "offline"; return renderHelp(); }
+  try { await writeTicket(uid, { tickets: { [t.id]: t } }); W.result.saved = true; }
+  catch (e) { W.result.error = e?.code || "failed"; if (e?.code === "invalid_argument") canWrite = false; }
+  if (W.result.saved) startResetCountdown();
+  renderHelp();
+}
+
+function stageBlocked(p) {
+  p.append(h("div", { class: "notice warn" }, h("p", { style: "margin:0", text: W.blockedMsg })),
+    h("div", { class: "row" }, h("button", { class: "btn primary", onclick: newTicket }, T("newTicket"))));
+}
+function stageDone(p) {
+  const { ticket: t, saved, error } = W.result;
+  if (!saved && !error) { p.append(h("p", { class: "meta", text: T("sending") })); return; }
+  const idEl = () => h("span", { class: "tid", text: t.id });
+  if (saved && t.status === "self") {
+    p.append(h("div", { class: "notice ok" }, h("h3", { text: T("gladH") }), h("p", { style: "margin:0" }, fill(T("gladP"), { id: idEl() }))));
+  } else if (saved) {
+    p.append(h("div", { class: "notice ok" }, h("h3", { text: T("inH") }),
+      h("p", { style: "margin:0" }, fill(T("inP"), { id: idEl(), phone: h("b", { text: t.phone }) }))),
+      h("div", { class: "schoolbox" }, h("span", { text: T("writeDown") }), h("b", { class: "tid", style: "font-size:22px", text: t.id })));
+  } else {
+    p.append(h("div", { class: "notice warn" }, h("h3", { text: T("failH") }), h("p", { style: "margin:0", text: T("failP") })),
+      h("pre", { class: "summary", text: ticketText(t) }),
+      h("div", { class: "row" }, h("button", { class: "btn", onclick: e => copy(ticketText(t), e.currentTarget) }, T("copySum"))));
+  }
+  p.append(h("div", { class: "row" },
+    h("button", { class: "btn primary", onclick: newTicket }, T("newTicket")),
+    saved ? h("span", { class: "meta", id: "reset-left", text: T("resetIn")(resetLeft) }) : null));
+}
+
+// ---------- Check a ticket (lookup by number + phone, safe on shared devices) ----------
+let lookup = { num: "", last4: "", found: null, tried: false };
+function thread(t, side) {
+  const ms = t.messages;
+  return h("div", { class: "thread" }, ms.length ? ms.map(m => h("div", { class: "msg " + (m.from === side ? "me" : "them") },
+    h("small", { text: (m.from === "it" ? T("itDesk") : t.name) + " · " + when(m.at) }), h("p", { text: m.text }))) : null);
+}
+let lastSend = 0;
+function replyBox(id, placeholder, sendLabel, onSend, failMsg) {
+  const ta = h("textarea", { id, placeholder, rows: 1, maxlength: LIM.msg });
+  const btn = h("button", { class: "btn primary", onclick: async () => {
+    const v = ta.value.trim().slice(0, LIM.msg); if (!v) return;
+    if (Date.now() - lastSend < 5000) return toast(T("eSlow"));
+    lastSend = Date.now();
+    btn.disabled = true;
+    try { await onSend(v); ta.value = ""; } catch { toast(failMsg); }
+    btn.disabled = false;
+  } }, sendLabel);
+  return h("div", { class: "reply" }, ta, btn);
+}
+// Inside Claude photos serve from /_blob/<id>; the standalone app supplies window.hdAssetUrl to look them up instead.
+function photoStrip(t) {
+  if (!t.photos?.length) return null;
+  return h("div", { class: "photos" }, t.photos.map(id => {
+    const img = h("img", { alt: "Photo attached to ticket " + t.id, loading: "lazy" });
+    const a = h("a", { class: "thumb", target: "_blank", rel: "noopener" }, img);
+    if (window.hdAssetUrl) window.hdAssetUrl(t._uid, id).then(u => { img.src = u; a.href = u; }).catch(() => { a.textContent = "Photo unavailable"; });
+    else { img.src = blobUrl(id); a.href = blobUrl(id); }
+    return a;
+  }));
+}
+
+function renderMine() {
+  const root = $("#view-mine");
+  if (current === "mine" && document.activeElement?.matches("#view-mine textarea")) return;
+  const focusId = document.activeElement?.id;
+  root.replaceChildren();
+  root.append(h("div", { class: "lede" }, h("h1", { text: T("lookH") }), h("p", { text: T("lookP") })));
+  if (authChecked && !db) { root.append(h("div", { class: "panel empty" }, h("span", { text: T("lookOff") }))); return; }
+  const t = lookup.found && ticketsOf(myDoc, myReplies, uid).find(x => x.id === lookup.found);
+  if (t) { root.append(ticketCard(t), h("button", { class: "link", style: "justify-self:start", onclick: () => { lookup = { num: "", last4: "", found: null, tried: false }; renderMine(); } }, T("another"))); return; }
+  const num = h("input", { type: "text", id: "lk-num", placeholder: T("tnumPh"), autocomplete: "off", value: lookup.num });
+  num.addEventListener("input", e => lookup.num = e.target.value);
+  const l4 = h("input", { type: "tel", id: "lk-l4", inputmode: "numeric", maxlength: "4", autocomplete: "off", value: lookup.last4 });
+  l4.addEventListener("input", e => lookup.last4 = e.target.value);
+  const form = h("form", { class: "panel", onsubmit: e => {
+    e.preventDefault();
+    const id = lookup.num.trim().toUpperCase().replace(/\s+/g, "");
+    const hit = ticketsOf(myDoc, myReplies, uid).find(x => x.id === id);
+    lookup.tried = true;
+    lookup.found = hit && digits(hit.phone).slice(-4) === digits(lookup.last4) && digits(lookup.last4).length === 4 ? id : null;
+    renderMine();
+  } },
+    h("div", { class: "grid2" }, h("label", { class: "f", for: "lk-num" }, T("tnum"), num), h("label", { class: "f", for: "lk-l4" }, T("last4"), l4)),
+    lookup.tried && !lookup.found ? h("span", { class: "err", text: T("notFound") }) : null,
+    h("div", { class: "row end" }, h("button", { class: "btn primary", type: "submit" }, T("find"))));
+  root.append(form);
+  if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus();
+}
+
+function ticketCard(t) {
+  const open = t.status !== "resolved" && t.status !== "self";
+  const card = h("article", { class: "tcard" },
+    h("div", { class: "tcard-h" }, h("h3", { text: I(issueOf(t.issue)).label }), spill(t.status)),
+    h("div", { class: "meta" }, h("span", { class: "tid", text: t.id }), " · " + t.deviceLabel + " · " + T("opened") + " " + when(t.createdAt)),
+    t.details ? h("p", { style: "margin:0;white-space:pre-wrap;overflow-wrap:anywhere", text: t.details }) : null,
+    photoStrip(t),
+    thread(t, "student"),
+    t.status === "resolved" ? rating(t) : null,
+    canWrite ? replyBox("r-" + t.id, open ? T("replyPh") : T("reopenPh"), T("send"), async text => {
+      const now = new Date().toISOString();
+      await writeTicket(uid, { tickets: { [t.id]: { messages: { [now.replace(/\D/g, "") + rid(3)]: { from: "student", text, at: now } }, seenAt: now } } });
+      toast(T("sentIT"));
+    }, T("sendFail")) : null);
+  if (t.studentUnread && canWrite) writeTicket(uid, { tickets: { [t.id]: { seenAt: new Date().toISOString() } } }).catch(() => {});
+  return card;
+}
+function rating(t) {
+  if (t.rating) return h("div", { class: "rate" }, h("span", { class: "rated " + t.rating, text: T("rateThanks") }));
+  if (!canWrite) return null;
+  const rate = v => writeTicket(uid, { tickets: { [t.id]: { rating: v, ratedAt: new Date().toISOString() } } }).then(() => toast(T("rateThanks"))).catch(() => toast(T("sendFail")));
+  return h("div", { class: "rate" }, h("span", { text: T("rateQ") }), h("button", { class: "btn small", onclick: () => rate("up") }, T("rateUp")), h("button", { class: "btn small", onclick: () => rate("down") }, T("rateDown")));
+}
+
+// ---------- IT desk ----------
+let D = { filter: "active", q: "", sel: null, selUid: null, settings: false, confirm: null };
+const sortTickets = arr => arr.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+function allTickets() {
+  const out = [];
+  for (const d of allDocs) out.push(...ticketsOf(d.data, allReplies[d.uid], d.uid));
+  return sortTickets(out);
+}
+const FILTERS = [
+  ["active", "Needs work", t => ["new", "progress", "waiting"].includes(t.status)],
+  ["new", "Open", t => t.status === "new"],
+  ["progress", "In progress", t => t.status === "progress"],
+  ["waiting", "Waiting on student", t => t.status === "waiting"],
+  ["resolved", "Resolved", t => t.status === "resolved"],
+  ["self", "Fixed with guide", t => t.status === "self"],
+  ["rated-down", "Rated not helpful", t => t.rating === "down"],
+  ["blocked", "Blocked accounts", t => !!blocked[t._uid]],
+  ["all", "All tickets", () => true],
+];
+
+function settingsPanel() {
+  const fields = [
+    ["notice", "Announcement for students", "e.g. Wi-Fi is down in Building B until 2pm. Shown at the top of the student page.", "textarea"],
+    ["resetUrl", "Password reset link", "https://… Shown on sign-in, password and two-step problems.", "url"],
+    ["wifiName", "Student Wi-Fi network name", "Shown on Wi-Fi problems.", "text"],
+    ["wifiNote", "Wi-Fi sign-in note", "e.g. Sign in with your school email and password.", "text"],
+    ["hours", "Help desk hours", "e.g. Mon–Fri, 8am–4pm", "text"],
+    ["location", "Where students can find you", "e.g. Room 112, main building", "text"],
+    ["contact", "How to reach IT", "Phone or email students can use. Shown on the student page.", "text"],
+  ];
+  const vals = { ...school };
+  const save = h("button", { class: "btn primary", type: "submit" }, "Save school info");
+  return h("form", { class: "panel settings", onsubmit: async e => {
+    e.preventDefault();
+    for (const [k] of fields) vals[k] = (document.getElementById("set-" + k).value || "").trim();
+    if (vals.resetUrl && !safeUrl(vals.resetUrl)) { toast("The reset link must start with https://"); return; }
+    save.disabled = true;
+    try { await db.doc("config/school").set({ ...vals, updatedAt: new Date().toISOString() }); toast("Saved. Students see it now."); D.settings = false; renderDesk(); }
+    catch { toast("Couldn't save. Try again."); save.disabled = false; }
+  } },
+    h("h2", { text: "School info for students" }),
+    h("p", { class: "meta", style: "margin:0", text: "Everything here shows on the student page. Leave a field blank to hide it." }),
+    h("div", { class: "grid2" }, fields.map(([k, label, hint, type]) => {
+      const inp = h(type === "textarea" ? "textarea" : "input", { id: "set-" + k, type: type === "textarea" ? null : type });
+      inp.value = school[k] || "";
+      return h("label", { class: "f", for: "set-" + k, style: type === "textarea" ? "grid-column:1/-1" : null }, label, inp, h("small", { class: "meta", text: hint }));
+    })),
+    h("div", { class: "row end" }, h("button", { class: "btn", type: "button", onclick: () => { D.settings = false; renderDesk(); } }, "Cancel"), save));
+}
+
+function renderDesk() {
+  const everything = isDesk ? allTickets() : [];
+  const all = everything.filter(t => !blocked[t._uid]);
+  const unread = all.filter(t => t.deskUnread).length;
+  const c = $("#desk-count"); c.hidden = !unread; c.textContent = unread;
+  if (current !== "desk") return;
+  if (!isDesk || !deskLoaded) {
+    $("#view-desk").replaceChildren(h("div", { class: "col" }, h("div", { class: "panel empty" },
+      !authChecked || (isDesk && !deskLoaded) ? h("strong", { text: "Loading tickets…" }) : [
+        h("strong", { text: "This page is for IT staff" }),
+        h("span", { text: "Students: use the help page to troubleshoot your device or send a ticket." }),
+        h("div", {}, h("a", { class: "btn primary", href: "#help", style: "text-decoration:none;display:inline-block" }, "Go to the help page"))])));
+    return;
+  }
+  if (D.settings && document.activeElement?.closest?.(".settings")) return;
+  const root = $("#view-desk");
+  const keepFocus = document.activeElement?.id;
+  const draft = $("#desk-reply")?.value;
+  root.replaceChildren();
+  root.append(h("div", { class: "deskhead" },
+    h("div", { class: "lede" }, h("h1", { text: "Tickets to solve" }), h("p", { text: "Every ticket students send lands here live. Pick one to see their contact info, photos, what they already tried, and to reply." })),
+    h("button", { class: "btn", onclick: () => { D.settings = !D.settings; renderDesk(); } }, D.settings ? "Close school info" : "School info & settings")));
+  if (D.settings) root.append(settingsPanel());
+  const counts = k => all.filter(FILTERS.find(f => f[0] === k)[2]).length;
+  const rated = all.filter(t => t.rating), up = rated.filter(t => t.rating === "up").length;
+  root.append(h("div", { class: "stats" }, ["new", "progress", "waiting", "resolved", "self"].map(k =>
+    h("button", { class: "stat", "aria-pressed": String(D.filter === k), onclick: () => { D.filter = D.filter === k ? "active" : k; renderDesk(); } }, h("b", { text: counts(k) }), h("span", { text: STATUS[k] }))),
+    h("button", { class: "stat", "aria-pressed": String(D.filter === "rated-down"), title: "Show tickets rated not helpful", onclick: () => { D.filter = D.filter === "rated-down" ? "active" : "rated-down"; renderDesk(); } },
+      h("b", { text: rated.length ? Math.round(up / rated.length * 100) + "%" : "–" }), h("span", { text: rated.length ? `Rated helpful (${up} of ${rated.length})` : "Rated helpful" }))));
+
+  const f = FILTERS.find(x => x[0] === D.filter)[2];
+  const q = D.q.toLowerCase();
+  const rows = everything.filter(t => D.filter === "blocked" || !blocked[t._uid]).filter(f).filter(t => !q || [t.id, t.name, t.email, t.phone, t.deviceLabel, t.issueLabel, t.details, t.room].join(" ").toLowerCase().includes(q));
+  rows.sort((a, b) => (b.urgent && b.status === "new") - (a.urgent && a.status === "new") || (b.deskUnread - a.deskUnread) || (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+
+  const search = h("input", { type: "text", id: "desk-q", placeholder: "Search name, phone, ticket #…", value: D.q });
+  search.addEventListener("input", e => { D.q = e.target.value; renderDesk(); });
+  const sel = h("select", { id: "desk-filter", onchange: e => { D.filter = e.target.value; renderDesk(); } }, FILTERS.map(([k, l]) => h("option", { value: k, selected: D.filter === k, text: l })));
+  const queue = h("div", { class: "queue" }, h("div", { class: "qtools" }, search, sel),
+    rows.length ? rows.map(t => h("button", { class: "qrow", "aria-current": String(D.sel === t.id), onclick: () => openTicket(t) },
+      h("div", { class: "l1" }, t.deskUnread ? h("span", { class: "dot", title: "Unread" }) : null, h("strong", { text: t.name }), t.urgent && t.status !== "resolved" ? h("span", { class: "urgent", text: "Urgent" }) : null, pill(t.status)),
+      h("div", { class: "l2", text: `${t.issueLabel} · ${t.deviceLabel}${t.photos?.length ? " · 📷 " + t.photos.length : ""}${t.lang === "es" ? " · Español" : ""} · ${ago(t.createdAt)}` })))
+    : h("div", { class: "empty" }, h("strong", { text: all.length ? "Nothing here" : "No tickets yet" }), h("span", { text: all.length ? "No tickets match this filter." : "When a student sends a ticket from Get help, it shows up here right away." })));
+
+  const cur = everything.find(t => t.id === D.sel && t._uid === D.selUid);
+  root.append(h("div", { class: "desk" }, queue, h("div", { class: "detail" }, cur ? detail(cur) : h("div", { class: "panel empty" }, h("strong", { text: "Pick a ticket" }), h("span", { text: "Details and the conversation with the student appear here." })))));
+  if (draft && $("#desk-reply")) $("#desk-reply").value = draft;
+  if (keepFocus && document.getElementById(keepFocus)) { const el = document.getElementById(keepFocus); el.focus(); if (el.setSelectionRange && el.value) try { el.setSelectionRange(el.value.length, el.value.length); } catch {} }
+}
+
+function openTicket(t) {
+  D.sel = t.id; D.selUid = t._uid; D.confirm = null;
+  if (t.deskUnread) writeReply(t._uid, t.id, { seenAt: new Date().toISOString() }).catch(() => {});
+  renderDesk();
+  if (matchMedia("(max-width: 860px)").matches) document.querySelector(".detail")?.scrollIntoView({ behavior: "smooth" });
+}
+
+function detail(t) {
+  const setStatus = async s => {
+    const now = new Date().toISOString();
+    try { await writeReply(t._uid, t.id, { status: s, statusAt: now, seenAt: now }); toast("Marked " + STATUS[s]); }
+    catch { toast("Couldn't update. Try again."); }
+  };
+  const copyBtn = v => h("button", { class: "btn small", onclick: e => copy(v, e.currentTarget) }, "Copy");
+  return h("div", { class: "panel" },
+    h("div", { class: "tcard-h" }, h("h3", { text: t.issueLabel }), pill(t.status)),
+    h("div", { class: "meta" }, h("span", { class: "tid", text: t.id }), " · opened " + when(t.createdAt), t.urgent ? h("span", { class: "urgent", style: "margin-left:8px", text: "Urgent" }) : null),
+    t.rating ? h("span", { class: "rated " + t.rating, text: t.rating === "up" ? "👍 Student said this helped" : "👎 Student said this didn't really help" }) : null,
+    h("dl", { class: "kv" },
+      h("dt", { text: "Student" }), h("dd", {}, h("span", { text: t.name }), t.lang === "es" ? h("span", { class: "pill s-self", text: "Prefers Spanish" }) : null),
+      h("dt", { text: "Email" }), h("dd", {}, h("span", { text: t.email }), copyBtn(t.email)),
+      h("dt", { text: "Phone" }), h("dd", {}, h("span", { text: t.phone }), copyBtn(t.phone)),
+      h("dt", { text: "Device" }), h("dd", { text: t.deviceLabel }),
+      t.room ? [h("dt", { text: "Location" }), h("dd", { text: t.room })] : null),
+    t.details ? h("div", { class: "sect" }, h("h4", { text: "What they said" }), h("p", { style: "margin:0;white-space:pre-wrap;overflow-wrap:anywhere", text: t.details })) : null,
+    t.photos?.length ? h("div", { class: "sect" }, h("h4", { text: "Photos" }), photoStrip(t), h("span", { class: "meta", text: "Click a photo to open it full size." })) : null,
+    h("div", { class: "sect" }, h("h4", { text: "Already tried" }), t.tried?.length ? h("ol", { class: "tried" }, t.tried.map(x => h("li", { text: x }))) : h("span", { class: "meta", text: "Nothing yet. They skipped straight to IT." })),
+    h("div", { class: "sect" }, h("h4", { text: "Status" }),
+      h("div", { class: "row" }, ["new", "progress", "waiting", "resolved"].map(s => h("button", { class: "btn small" + (t.status === s ? " primary" : ""), onclick: () => setStatus(s), disabled: t.status === s }, STATUS[s])))),
+    h("div", { class: "sect" }, h("h4", { text: "Conversation" }), (() => { const L = lang; lang = "en"; const th = thread(t, "it"); lang = L; return th; })(),
+      replyBox("desk-reply", "Reply to " + (t.name.split(" ")[0] || "student") + "…", "Send", async text => {
+        const now = new Date().toISOString();
+        await writeReply(t._uid, t.id, { messages: { [now.replace(/\D/g, "") + rid(3)]: { text, at: now } }, seenAt: now, ...(t.status === "new" ? { status: "progress", statusAt: now } : {}) });
+        toast("Reply sent");
+      }, "Message didn't send. Try again."),
+      h("span", { class: "meta", text: "Students see replies when they look up this ticket number on the student page. For anything urgent, call or text them." })),
+    h("div", { class: "sect" }, h("h4", { text: "Copy for your records" }), h("div", { class: "row" }, h("button", { class: "btn small", onclick: e => copy(ticketText(t), e.currentTarget) }, "Copy ticket summary"))),
+    cleanup(t));
+}
+
+// Spam and vandalism tools: delete a ticket, delete everything from one account, or block an account.
+function cleanup(t) {
+  const isBlocked = !!blocked[t._uid];
+  const confirmRow = (key, text, action) => D.confirm === key
+    ? h("div", { class: "notice warn" }, h("span", { text }), h("div", { class: "row" },
+        h("button", { class: "btn small", onclick: () => { D.confirm = null; renderDesk(); } }, "Cancel"),
+        h("button", { class: "btn small primary", onclick: async () => { D.confirm = null; try { await action(); } catch { toast("Couldn't do that. Try again."); } renderDesk(); } }, "Yes, do it")))
+    : null;
+  const ask = key => () => { D.confirm = key; renderDesk(); };
+  const count = allTickets().filter(x => x._uid === t._uid).length;
+  return h("div", { class: "sect" }, h("h4", { text: "Spam & cleanup" }),
+    h("div", { class: "row" },
+      h("button", { class: "btn small", onclick: ask("del") }, "Delete this ticket"),
+      h("button", { class: "btn small", onclick: ask("block") }, isBlocked ? "Unblock this account" : "Block this account"),
+      h("button", { class: "btn small", onclick: ask("wipe") }, `Delete all ${count} from this account`)),
+    confirmRow("del", `Delete ticket ${t.id} for good?`, async () => {
+      await removeEntry("tickets/" + t._uid, t.id); await removeEntry("replies/" + t._uid, t.id); D.sel = null; toast("Ticket deleted");
+    }),
+    confirmRow("block", isBlocked ? "Let this account send tickets again?" : "Block this account? Its tickets disappear from your queue (see “Blocked accounts” in the filter), and it can't send new ones.", async () => {
+      const ref = db.doc("config/blocked"), snap = await ref.get();
+      const uids = { ...(snap.exists && snap.data()?.uids && typeof snap.data().uids === "object" ? snap.data().uids : {}) };
+      if (isBlocked) delete uids[t._uid]; else uids[t._uid] = { at: new Date().toISOString(), name: t.name };
+      await ref.set({ uids }); toast(isBlocked ? "Account unblocked" : "Account blocked");
+    }),
+    confirmRow("wipe", `Delete all ${count} tickets from this account for good?`, async () => {
+      await db.doc("tickets/" + t._uid).delete(); await db.doc("replies/" + t._uid).delete(); D.sel = null; toast("Deleted");
+    }),
+    h("span", { class: "meta", text: "Blocking works per signed-in account. Students can only ever change their own tickets, never yours or anyone else's." }));
+}
+
+// Two pages from one ticket store: the artifact link is the student page, the same link ending in #desk is the IT queue.
+function applyMode() {
+  const desk = location.hash === "#desk";
+  $("#brand-name").textContent = desk ? "IT Ticket Desk" : "Student Tech Help Desk";
+  document.title = desk ? "IT Ticket Desk" : "Student Tech Help Desk";
+  $("#tab-help").hidden = $("#tab-mine").hidden = $("#lang").hidden = desk;
+  $("#tab-desk").hidden = !desk;
+  if (desk) { const L = lang; lang = "en"; document.documentElement.lang = "en"; show("desk"); lang = L; }
+  else { document.documentElement.lang = lang; show(current === "desk" ? "help" : current); }
+}
+addEventListener("hashchange", applyMode);
+setLang(lang);
+applyMode();
+setInterval(() => { if (current === "desk" && !document.activeElement?.matches("textarea, input")) renderDesk(); }, 60000);
+})();
+</script>
