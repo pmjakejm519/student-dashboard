@@ -3,7 +3,7 @@
 // interface on top of Firebase Auth, Firestore and Storage.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getAuth, onAuthStateChanged, signInWithPopup, signOut,
+  getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut,
   GoogleAuthProvider, OAuthProvider, browserLocalPersistence, setPersistence, connectAuthEmulator, signInWithCredential,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
@@ -56,6 +56,11 @@ if (opts.useEmulators && ["localhost", "127.0.0.1"].includes(location.hostname))
   window.__hdTestSignIn = (sub, email) => signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, email, email_verified: true })));
 }
 await setPersistence(auth, browserLocalPersistence).catch(() => {});
+// Coming back from a full-page Google sign-in: surface any error instead of silently showing the button again.
+getRedirectResult(auth).then(res => {
+  let tried = false; try { tried = sessionStorage.getItem("hd:redirect") === "1"; sessionStorage.removeItem("hd:redirect"); } catch {}
+  if (!res && tried && !auth.currentUser) gateErr("Sign-in didn't finish. Your browser may be blocking third-party cookies for this site. Allow pop-ups for this site, or try Chrome or Safari. (auth/redirect-no-user)");
+}).catch(e => gateErr(`Sign-in didn't work. Try again, or ask IT for help. (${e?.code || "unknown"})`));
 
 const PROVIDERS = {
   google: { label: "Sign in with Google", make: () => { const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" }); return p; } },
@@ -71,6 +76,12 @@ for (const key of opts.providers) {
     try { await signInWithPopup(auth, def.make()); }
     catch (e) {
       const code = e?.code || "unknown";
+      // Some browsers (Opera GX, strict pop-up blockers, in-app browsers) refuse the pop-up: sign in on a full page instead.
+      if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+        b.textContent = "Taking you to Google…";
+        try { sessionStorage.setItem("hd:redirect", "1"); } catch {}
+        return signInWithRedirect(auth, def.make());
+      }
       const msg = {
         "auth/popup-blocked": "Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.",
         "auth/popup-closed-by-user": "The sign-in window was closed before you finished. Try again.",
