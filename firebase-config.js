@@ -14,7 +14,7 @@ export const appOptions = {
   providers: ["google"],
   // Google "Web client ID" (Firebase → Authentication → Sign-in method → Google → Web SDK configuration).
   // When set, students sign in with Google's own button, which works even where pop-ups or third-party cookies are blocked.
-  googleClientId: "",
+  googleClientId: "367397083312-da3toka0jhe4uv2t6tai3pukv6q40kr4.apps.googleusercontent.com",
   // Only let these school email domains in, e.g. ["hunterbusinessschool.edu"]. Empty = any account.
   // Also set the same domain in firestore.rules so the server enforces it.
   allowedDomains: [],
