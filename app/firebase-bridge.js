@@ -165,7 +165,20 @@ const user = await new Promise(resolve => {
     resolve(u);
   });
 });
-try { isAdmin = (await getDoc(fsDoc(fs, "admins", user.uid))).exists(); } catch { isAdmin = false; }
+// Show progress instead of leaving the sign-in button up while the database answers.
+gate.querySelector("#hd-gate-btns").hidden = true;
+gate.querySelector("#hd-gate-p").textContent = `Signed in as ${user.email}. Loading the help desk…`;
+const slow = setTimeout(() => gateErr("This is taking longer than usual. If it doesn't load, IT should check that Firestore Database is created in Firebase (Build → Firestore Database) and its rules are published."), 6000);
+try {
+  isAdmin = await Promise.race([
+    getDoc(fsDoc(fs, "admins", user.uid)).then(d => d.exists()),
+    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+  ]);
+} catch (e) {
+  isAdmin = false;
+  if (e?.code && e.code !== "permission-denied") gateErr(`Couldn't reach the ticket database (${e.code}). IT should check that Firestore Database is created and its rules are published.`);
+}
+clearTimeout(slow);
 gate.hidden = true;
 addSignOut(user.email);
 
