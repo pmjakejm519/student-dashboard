@@ -90,8 +90,11 @@ if (useGis) {
   s.onload = () => {
     google.accounts.id.initialize({
       client_id: opts.googleClientId,
-      use_fedcm_for_button: true,
+      // FedCM (the browser-native account picker) isn't available in every Chromium browser (Opera GX ignores clicks),
+      // so the button opens Google's small sign-in window instead, straight from the click.
+      ux_mode: "popup",
       use_fedcm_for_prompt: true,
+      itp_support: true,
       callback: async resp => {
         gateErr("");
         try { await signInWithCredential(auth, GoogleAuthProvider.credential(resp.credential)); }
@@ -99,6 +102,8 @@ if (useGis) {
       },
     });
     google.accounts.id.renderButton(holder, { theme: "filled_blue", size: "large", text: "signin_with", shape: "rectangular", width: Math.min(320, holder.clientWidth || 320) });
+    // Also offer Google's one-tap account chooser where the browser supports it.
+    google.accounts.id.prompt();
   };
   s.onerror = () => gateErr("Couldn't load Google sign-in. Check your internet connection, or turn off ad or tracker blocking for this site.");
   document.head.append(s);
